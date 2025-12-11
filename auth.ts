@@ -53,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       issuer: serverEnv.KEYCLOAK_ISSUER,
     }),
   ],
-  secret: serverEnv.AUTH_SECRET, // Assurez-vous d'avoir cette variable
+  secret: serverEnv.NEXTAUTH_SECRET,
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",

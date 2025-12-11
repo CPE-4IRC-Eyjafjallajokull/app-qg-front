@@ -9,10 +9,12 @@ Copy `.env.example` to `.env.local` for local development or to `.env` for Docke
 - `KEYCLOAK_ISSUER` – Keycloak issuer URL for your realm (e.g. `https://sso.example.com/realms/my-realm`)
 - `KEYCLOAK_CLIENT_ID` – Keycloak client ID for this frontend
 - `KEYCLOAK_CLIENT_SECRET` – Client secret to exchange tokens
-- `AUTH_SECRET` – Secret used by NextAuth
+- `NEXTAUTH_SECRET` – Secret used by NextAuth/Auth.js
+- `NEXTAUTH_URL` – Public URL of the frontend (used by Auth.js trusted host checks)
+- `AUTH_TRUST_HOST` – Set to `true` if you want to bypass Auth.js host verification (prefer setting `NEXTAUTH_URL`)
 - `API_URL` – Base URL for the API (embedded at build time for the frontend)
 
-`lib/env.ts` centralizes these variables and fails fast when required server-side values are missing.
+`lib/env.server.ts` centralizes these variables and fails fast when required server-side values are missing.
 
 ## Local development
 

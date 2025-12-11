@@ -57,15 +57,16 @@ jobs:
           KEYCLOAK_ISSUER: ${{ vars.KEYCLOAK_ISSUER }}
           KEYCLOAK_CLIENT_ID: ${{ vars.KEYCLOAK_CLIENT_ID }}
           KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: "https://${{ vars.FRONT_HOST }}"
+          AUTH_TRUST_HOST: ${{ vars.AUTH_TRUST_HOST}}
         with:
           host: ${{ secrets.ML_DEPLOY_HOST }}
           username: ${{ secrets.ML_DEPLOY_USER }}
           key: ${{ secrets.ML_DEPLOY_KEY }}
           port: ${{ secrets.ML_DEPLOY_PORT }}
           script_stop: true
-          envs: GITHUB_REF_NAME,FRONT_HOST,API_URL,KEYCLOAK_ISSUER,KEYCLOAK_CLIENT_ID,KEYCLOAK_CLIENT_SECRET,AUTH_SECRET,NEXTAUTH_URL
+          envs: GITHUB_REF_NAME,FRONT_HOST,API_URL,KEYCLOAK_ISSUER,KEYCLOAK_CLIENT_ID,KEYCLOAK_CLIENT_SECRET,NEXTAUTH_SECRET,NEXTAUTH_URL,AUTH_TRUST_HOST
           script: |
             set -euo pipefail
             OWNER='${{ github.repository_owner }}'
@@ -87,8 +88,9 @@ jobs:
             KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER}
             KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
             KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-            AUTH_SECRET=${AUTH_SECRET}
+            NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
             NEXTAUTH_URL=${NEXTAUTH_URL:-https://$FRONT_HOST}
+            AUTH_TRUST_HOST=${AUTH_TRUST_HOST}
 
             cd "$INSTALL_DIR"
 
@@ -101,9 +103,10 @@ jobs:
               KEYCLOAK_ISSUER="$KEYCLOAK_ISSUER" \
               KEYCLOAK_CLIENT_ID="$KEYCLOAK_CLIENT_ID" \
               KEYCLOAK_CLIENT_SECRET="$KEYCLOAK_CLIENT_SECRET" \
-              AUTH_SECRET="$AUTH_SECRET" \
+              NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
               API_URL="$API_URL" \
               NEXTAUTH_URL="$NEXTAUTH_URL" \
+              AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
               docker compose -f compose.prod.yaml up -d --remove-orphans
 
             # Cleanup old images
