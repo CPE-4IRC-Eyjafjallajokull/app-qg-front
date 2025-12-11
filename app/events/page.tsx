@@ -2,88 +2,155 @@
 
 import { useSSE } from "@/hooks/useSSE";
 import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Header } from "@/components/header";
+import { AlertCircle, CheckCircle2, Circle, Trash2 } from "lucide-react";
 
 export default function EventsPage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const { data, isConnected, error } = useSSE(`${apiUrl}/events`);
-  const [events, setEvents] = useState<{ event: string; timestamp: string }[]>(
-    []
-  );
+  const [events, setEvents] = useState<{ event: string; timestamp: string }[]>([]);
 
   // Ajouter chaque événement à la liste
   if (data && events[events.length - 1]?.timestamp !== data.timestamp) {
     setEvents((prev) => [...prev, data]);
   }
 
+  const clearEvents = () => setEvents([]);
+
+  const getEventIcon = (eventType: string) => {
+    switch (eventType) {
+      case "connected":
+        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+      case "heartbeat":
+        return <Circle className="w-4 h-4 text-blue-500" />;
+      default:
+        return <Circle className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8">SSE Events Stream</h1>
+    <div className="min-h-screen bg-background">
+      <Header />
 
-        {/* Status */}
-        <div className="mb-6 p-4 rounded-lg bg-white shadow-sm border-l-4">
-          <div className={`border-l-4 ${isConnected ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"} p-4`}>
-            <p className="font-semibold">
-              Status:{" "}
-              <span
-                className={isConnected ? "text-green-600" : "text-red-600"}
-              >
-                {isConnected ? "✓ Connected" : "✗ Disconnected"}
-              </span>
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              API URL: <code className="bg-gray-100 px-2 py-1 rounded">{apiUrl}</code>
-            </p>
-          </div>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 border-l-4 border-red-500">
-            <p className="text-red-700 font-semibold">Error</p>
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Events Log */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-t-lg">
-            <h2 className="text-white font-semibold">Events Log ({events.length})</h2>
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">SSE Events Stream</h1>
+            <p className="text-muted-foreground">Real-time event streaming from the API</p>
           </div>
 
-          <div className="p-4 max-h-96 overflow-y-auto">
-            {events.length === 0 ? (
-              <p className="text-gray-500 italic">Waiting for events...</p>
-            ) : (
-              <div className="space-y-2">
-                {events.map((evt, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 bg-gray-50 rounded border-l-4 border-blue-400"
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-mono font-semibold text-blue-600">
-                        {evt.event}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(evt.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          {/* Status Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">Connection Status</CardTitle>
+                <Badge variant={isConnected ? "default" : "destructive"}>
+                  {isConnected ? "Connected" : "Disconnected"}
+                </Badge>
               </div>
-            )}
-          </div>
-        </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center gap-2">
+                {isConnected ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                )}
+                <span className="text-sm">
+                  {isConnected
+                    ? "Connected to API"
+                    : "Connection lost"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                API: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{apiUrl}</code>
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800">
-            💡 <strong>Tip:</strong> L'API envoie un événement 'connected' au démarrage,
-            puis des heartbeats toutes les 5 secondes.
-          </p>
+          {/* Error Alert */}
+          {error && (
+            <Card className="border-red-500 bg-red-50 dark:bg-red-950">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <CardTitle className="text-sm">Connection Error</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Events Log Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Events Log</CardTitle>
+                  <CardDescription>{events.length} events received</CardDescription>
+                </div>
+                {events.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearEvents}
+                    className="h-8 px-2"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {events.length === 0 ? (
+                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                  <Circle className="w-4 h-4 mr-2 opacity-50" />
+                  Waiting for events...
+                </div>
+              ) : (
+                <ScrollArea className="h-64 pr-4">
+                  <div className="space-y-2">
+                    {events.map((evt, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded border bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {getEventIcon(evt.event)}
+                          <span className="font-mono text-sm font-medium">{evt.event}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(evt.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Info Card */}
+          <Card className="bg-muted/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">How it works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>• API sends a <code className="bg-background px-1 rounded text-xs">connected</code> event on startup</p>
+              <p>• Heartbeat events are sent every 5 seconds</p>
+              <p>• Connection automatically reconnects on disconnect</p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
