@@ -1,21 +1,24 @@
 import NextAuth from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
-
-const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER;
+import { serverEnv } from "@/lib/env.server";
+import type { JWT } from "next-auth/jwt";
 
 // Fonction utilitaire pour rafraîchir le token
-async function refreshAccessToken(token: any) {
+async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const response = await fetch(`${KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: process.env.KEYCLOAK_CLIENT_ID!,
-        client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
-        grant_type: "refresh_token",
-        refresh_token: token.refreshToken,
-      }),
-    });
+    const response = await fetch(
+      `${serverEnv.KEYCLOAK_ISSUER}/protocol/openid-connect/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: serverEnv.KEYCLOAK_CLIENT_ID,
+          client_secret: serverEnv.KEYCLOAK_CLIENT_SECRET,
+          grant_type: "refresh_token",
+          refresh_token: token.refreshToken,
+        }),
+      },
+    );
 
     const refreshedTokens = await response.json();
 
@@ -41,12 +44,12 @@ async function refreshAccessToken(token: any) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Keycloak({
-      clientId: process.env.KEYCLOAK_CLIENT_ID || '',
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
-      issuer: KEYCLOAK_ISSUER || '',
+      clientId: serverEnv.KEYCLOAK_CLIENT_ID,
+      clientSecret: serverEnv.KEYCLOAK_CLIENT_SECRET,
+      issuer: serverEnv.KEYCLOAK_ISSUER,
     }),
   ],
-  secret: process.env.AUTH_SECRET, // Assurez-vous d'avoir cette variable
+  secret: serverEnv.AUTH_SECRET, // Assurez-vous d'avoir cette variable
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
@@ -65,23 +68,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       // 2. Token encore valide
-      if (token.expiresAt && Date.now() < (token.expiresAt * 1000)) {
+      if (token.expiresAt && Date.now() < token.expiresAt * 1000) {
         return token;
       }
 
       // 3. Token expiré, on tente de le rafraîchir
       return await refreshAccessToken(token);
     },
-    
+
     async session({ session, token }) {
       // On passe les infos du token à la session
       session.accessToken = token.accessToken;
       session.error = token.error;
-      
+
       if (session.user && token.sub) {
         session.user.id = token.sub;
       }
-      
+
       return session;
     },
   },

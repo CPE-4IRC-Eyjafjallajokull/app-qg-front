@@ -2,17 +2,26 @@
 
 import { useSSE } from "@/hooks/useSSE";
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
+import { publicEnv } from "@/lib/env.public";
 import { AlertCircle, CheckCircle2, Circle, Trash2 } from "lucide-react";
 
 export default function EventsPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = publicEnv.NEXT_PUBLIC_API_URL;
   const { data, isConnected, error } = useSSE(`${apiUrl}/events`);
-  const [events, setEvents] = useState<{ event: string; timestamp: string }[]>([]);
+  const [events, setEvents] = useState<{ event: string; timestamp: string }[]>(
+    [],
+  );
 
   // Ajouter chaque événement à la liste
   if (data && events[events.length - 1]?.timestamp !== data.timestamp) {
@@ -40,15 +49,21 @@ export default function EventsPage() {
         <div className="space-y-6">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">SSE Events Stream</h1>
-            <p className="text-muted-foreground">Real-time event streaming from the API</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              SSE Events Stream
+            </h1>
+            <p className="text-muted-foreground">
+              Real-time event streaming from the API
+            </p>
           </div>
 
           {/* Status Card */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">Connection Status</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Connection Status
+                </CardTitle>
                 <Badge variant={isConnected ? "default" : "destructive"}>
                   {isConnected ? "Connected" : "Disconnected"}
                 </Badge>
@@ -62,13 +77,14 @@ export default function EventsPage() {
                   <AlertCircle className="w-5 h-5 text-red-500" />
                 )}
                 <span className="text-sm">
-                  {isConnected
-                    ? "Connected to API"
-                    : "Connection lost"}
+                  {isConnected ? "Connected to API" : "Connection lost"}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                API: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{apiUrl}</code>
+                API:{" "}
+                <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                  {apiUrl}
+                </code>
               </p>
             </CardContent>
           </Card>
@@ -83,7 +99,9 @@ export default function EventsPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {error}
+                </p>
               </CardContent>
             </Card>
           )}
@@ -94,7 +112,9 @@ export default function EventsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Events Log</CardTitle>
-                  <CardDescription>{events.length} events received</CardDescription>
+                  <CardDescription>
+                    {events.length} events received
+                  </CardDescription>
                 </div>
                 {events.length > 0 && (
                   <Button
@@ -125,7 +145,9 @@ export default function EventsPage() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                           {getEventIcon(evt.event)}
-                          <span className="font-mono text-sm font-medium">{evt.event}</span>
+                          <span className="font-mono text-sm font-medium">
+                            {evt.event}
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground">
                           {new Date(evt.timestamp).toLocaleTimeString()}
@@ -144,7 +166,13 @@ export default function EventsPage() {
               <CardTitle className="text-sm">How it works</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>• API sends a <code className="bg-background px-1 rounded text-xs">connected</code> event on startup</p>
+              <p>
+                • API sends a{" "}
+                <code className="bg-background px-1 rounded text-xs">
+                  connected
+                </code>{" "}
+                event on startup
+              </p>
               <p>• Heartbeat events are sent every 5 seconds</p>
               <p>• Connection automatically reconnects on disconnect</p>
             </CardContent>

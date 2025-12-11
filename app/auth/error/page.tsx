@@ -2,7 +2,13 @@
 
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +16,9 @@ export default function ErrorPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
-  const errorMessages: { [key: string]: { title: string; description: string } } = {
+  const errorMessages: {
+    [key: string]: { title: string; description: string };
+  } = {
     AccessDenied: {
       title: "Access Denied",
       description: "You do not have permission to access this application.",
@@ -45,7 +53,8 @@ export default function ErrorPage() {
 
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Error code: <code className="bg-muted px-2 py-1 rounded text-xs">{error}</code>
+            Error code:{" "}
+            <code className="bg-muted px-2 py-1 rounded text-xs">{error}</code>
           </p>
 
           <div className="space-y-2">

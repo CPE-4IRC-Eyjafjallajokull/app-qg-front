@@ -2,7 +2,13 @@
 
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, LogIn } from "lucide-react";
 
@@ -11,9 +17,9 @@ export default function SignInPage() {
   const error = searchParams.get("error");
 
   const handleSignIn = async () => {
-    await signIn("keycloak", { 
-      redirect: true, 
-      callbackUrl: "/" 
+    await signIn("keycloak", {
+      redirect: true,
+      callbackUrl: "/",
     });
   };
 
@@ -43,17 +49,14 @@ export default function SignInPage() {
             </div>
           )}
 
-          <Button 
-            onClick={handleSignIn}
-            className="w-full"
-            size="lg"
-          >
+          <Button onClick={handleSignIn} className="w-full" size="lg">
             <LogIn className="w-4 h-4 mr-2" />
             Sign in with Keycloak
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            This is a secure application. You need to authenticate to access the dashboard.
+            This is a secure application. You need to authenticate to access the
+            dashboard.
           </p>
         </CardContent>
       </Card>

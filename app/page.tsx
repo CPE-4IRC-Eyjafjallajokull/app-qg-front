@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Header } from "@/components/header";
 import Link from "next/link";
 import { ArrowRight, Zap, Activity } from "lucide-react";
@@ -16,7 +22,8 @@ export default function Home() {
           <div className="space-y-4">
             <h2 className="text-4xl font-bold tracking-tight">Welcome to QG</h2>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Real-time event streaming and operational dashboard for emergency management.
+              Real-time event streaming and operational dashboard for emergency
+              management.
             </p>
           </div>
 
@@ -33,7 +40,8 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Monitor live event streams from the API with automatic reconnection and real-time updates.
+                  Monitor live event streams from the API with automatic
+                  reconnection and real-time updates.
                 </p>
                 <Link href="/events">
                   <Button className="w-full" variant="default">
@@ -55,7 +63,8 @@ export default function Home() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Check the health and status of all connected services and systems.
+                  Check the health and status of all connected services and
+                  systems.
                 </p>
                 <Button className="w-full" variant="outline" disabled>
                   Coming Soon
@@ -74,15 +83,31 @@ export default function Home() {
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3">
                   <span className="font-bold text-blue-600 min-w-6">1.</span>
-                  <span>Ensure the API is running on <code className="bg-muted px-1.5 py-0.5 rounded text-xs">localhost:8000</code></span>
+                  <span>
+                    Ensure the API is running on{" "}
+                    <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                      localhost:8000
+                    </code>
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-blue-600 min-w-6">2.</span>
-                  <span>Navigate to the <Link href="/events" className="text-blue-600 hover:underline">Events Stream</Link> page</span>
+                  <span>
+                    Navigate to the{" "}
+                    <Link
+                      href="/events"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Events Stream
+                    </Link>{" "}
+                    page
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-blue-600 min-w-6">3.</span>
-                  <span>Watch real-time events as they arrive from the server</span>
+                  <span>
+                    Watch real-time events as they arrive from the server
+                  </span>
                 </li>
               </ol>
             </CardContent>
@@ -92,8 +117,9 @@ export default function Home() {
           <Card className="bg-muted/50">
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">
-                <strong>Tip:</strong> This is a minimal testing interface using shadcn/ui components. 
-                It demonstrates SSE integration between the Next.js frontend and FastAPI backend.
+                <strong>Tip:</strong> This is a minimal testing interface using
+                shadcn/ui components. It demonstrates SSE integration between
+                the Next.js frontend and FastAPI backend.
               </p>
             </CardContent>
           </Card>

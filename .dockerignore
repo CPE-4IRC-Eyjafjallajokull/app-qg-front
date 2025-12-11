@@ -1,0 +1,17 @@
+.next
+node_modules
+npm-debug.log*
+coverage
+dist
+out
+.git
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+!.env.example
+*.log
+yarn.lock
+pnpm-lock.yaml
+.gitignore
