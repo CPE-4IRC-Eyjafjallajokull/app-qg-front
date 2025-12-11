@@ -10,7 +10,7 @@ import { Header } from "@/components/header";
 import { AlertCircle, CheckCircle2, Circle, Trash2 } from "lucide-react";
 
 export default function EventsPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const { data, isConnected, error } = useSSE(`${apiUrl}/events`);
   const [events, setEvents] = useState<{ event: string; timestamp: string }[]>([]);
 
