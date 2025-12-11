@@ -1,0 +1,88 @@
+import NextAuth from "next-auth";
+import Keycloak from "next-auth/providers/keycloak";
+
+const KEYCLOAK_ISSUER = process.env.KEYCLOAK_ISSUER;
+
+// Fonction utilitaire pour rafraîchir le token
+async function refreshAccessToken(token: any) {
+  try {
+    const response = await fetch(`${KEYCLOAK_ISSUER}/protocol/openid-connect/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.KEYCLOAK_CLIENT_ID!,
+        client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken,
+      }),
+    });
+
+    const refreshedTokens = await response.json();
+
+    if (!response.ok) {
+      throw refreshedTokens;
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      expiresAt: Math.floor(Date.now() / 1000) + refreshedTokens.expires_in,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fallback à l'ancien si le nouveau n'est pas renvoyé
+    };
+  } catch (error) {
+    console.error("Error refreshing access token", error);
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    Keycloak({
+      clientId: process.env.KEYCLOAK_CLIENT_ID || '',
+      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
+      issuer: KEYCLOAK_ISSUER || '',
+    }),
+  ],
+  secret: process.env.AUTH_SECRET, // Assurez-vous d'avoir cette variable
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
+  callbacks: {
+    async jwt({ token, account, user }) {
+      // 1. Première connexion
+      if (account && user) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          expiresAt: account.expires_at, // OIDC renvoie souvent ceci
+          id: user.id,
+        };
+      }
+
+      // 2. Token encore valide
+      if (token.expiresAt && Date.now() < (token.expiresAt * 1000)) {
+        return token;
+      }
+
+      // 3. Token expiré, on tente de le rafraîchir
+      return await refreshAccessToken(token);
+    },
+    
+    async session({ session, token }) {
+      // On passe les infos du token à la session
+      session.accessToken = token.accessToken;
+      session.error = token.error;
+      
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      
+      return session;
+    },
+  },
+});
