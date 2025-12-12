@@ -14,12 +14,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { AlertCircle, CheckCircle2, Circle, Trash2 } from "lucide-react";
-import { toast } from "sonner"
+import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function DemoPage() {
-  const { data, events, isConnected, error, clearEvents } = useSSE("/api/events");
+  const { data, events, isConnected, error, clearEvents } =
+    useSSE("/api/events");
   const [demoScenarioPayload, setDemoScenarioPayload] = useState({
     type: "demo-incident",
     description: "Incident déclaré via la démo QG Dashboard",
@@ -48,7 +53,10 @@ export default function DemoPage() {
 
   const startDemoScenario = async () => {
     try {
-      const response = await fetch("/api/demo/start", { method: "POST", body: JSON.stringify(demoScenarioPayload) });
+      const response = await fetch("/api/demo/start", {
+        method: "POST",
+        body: JSON.stringify(demoScenarioPayload),
+      });
       if (response.ok) {
         toast.success("Demo scenario started");
       } else {
@@ -58,7 +66,7 @@ export default function DemoPage() {
     } catch (error) {
       toast.error("An error occurred while starting the demo scenario");
     }
-  }
+  };
 
   const updateDemoPayload = (newPayload: string) => {
     try {
@@ -68,7 +76,7 @@ export default function DemoPage() {
     } catch (error) {
       // Ignore JSON parse errors
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,8 +146,9 @@ export default function DemoPage() {
             <CardContent>
               {/* Start demo scenario */}
               <p className="text-sm text-muted-foreground">
-                Cette démo illustre comment un incident peut etre déclaré par un usager
-                et comment le système intéragit en temps réel via les événements SSE.
+                Cette démo illustre comment un incident peut etre déclaré par un
+                usager et comment le système intéragit en temps réel via les
+                événements SSE.
               </p>
 
               <div className="mt-4 space-y-2">
@@ -148,14 +157,10 @@ export default function DemoPage() {
                   value={JSON.stringify(demoScenarioPayload, null, 2)}
                   onChange={(e) => updateDemoPayload(e.target.value)}
                 />
-                <Button
-                  variant="default"
-                  onClick={startDemoScenario}
-                >
+                <Button variant="default" onClick={startDemoScenario}>
                   Démarrer le scénario de démo
                 </Button>
               </div>
-
             </CardContent>
           </Card>
 

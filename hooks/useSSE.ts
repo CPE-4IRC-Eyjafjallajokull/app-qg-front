@@ -49,9 +49,8 @@ export function useSSE(url: string) {
     const namedEvents = [
       "connected",
       "heartbeat",
-      "incident_declared",
-      "incident_updated",
-      "incident_closed",
+      "new_incident",
+      "incident_ack",
     ];
     namedEvents.forEach((evt) =>
       eventSource.addEventListener(evt, handleEvent as EventListener),

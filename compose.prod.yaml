@@ -10,6 +10,7 @@ services:
       - AUTH_TRUST_HOST=${AUTH_TRUST_HOST:-true}
       - API_URL=${API_URL}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
     restart: unless-stopped
     networks:
       - proxy

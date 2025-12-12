@@ -27,7 +27,7 @@ jobs:
       packages: read
     environment:
       name: PROD
-      url: https://${{ vars.FRONT_HOST || 'front.example.com' }}
+      url: https://${{ vars.FRONT_HOST }}
 
     steps:
       - name: Checkout
@@ -60,13 +60,14 @@ jobs:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: "https://${{ vars.FRONT_HOST }}"
           AUTH_TRUST_HOST: ${{ vars.AUTH_TRUST_HOST}}
+          NEXT_PUBLIC_APP_VERSION: ${{ github.ref_name }}
         with:
           host: ${{ secrets.ML_DEPLOY_HOST }}
           username: ${{ secrets.ML_DEPLOY_USER }}
           key: ${{ secrets.ML_DEPLOY_KEY }}
           port: ${{ secrets.ML_DEPLOY_PORT }}
           script_stop: true
-          envs: GITHUB_REF_NAME,FRONT_HOST,API_URL,KEYCLOAK_ISSUER,KEYCLOAK_CLIENT_ID,KEYCLOAK_CLIENT_SECRET,NEXTAUTH_SECRET,NEXTAUTH_URL,AUTH_TRUST_HOST
+          envs: GITHUB_REF_NAME,FRONT_HOST,API_URL,KEYCLOAK_ISSUER,KEYCLOAK_CLIENT_ID,KEYCLOAK_CLIENT_SECRET,NEXTAUTH_SECRET,NEXTAUTH_URL,AUTH_TRUST_HOST,NEXT_PUBLIC_APP_VERSION
           script: |
             set -euo pipefail
             OWNER='${{ github.repository_owner }}'
@@ -91,6 +92,7 @@ jobs:
             NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
             NEXTAUTH_URL=${NEXTAUTH_URL:-https://$FRONT_HOST}
             AUTH_TRUST_HOST=${AUTH_TRUST_HOST}
+            NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-latest}
 
             cd "$INSTALL_DIR"
 
@@ -107,6 +109,7 @@ jobs:
               API_URL="$API_URL" \
               NEXTAUTH_URL="$NEXTAUTH_URL" \
               AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
+              NEXT_PUBLIC_APP_VERSION="$NEXT_PUBLIC_APP_VERSION" \
               docker compose -f compose.prod.yaml up -d --remove-orphans
 
             # Cleanup old images
