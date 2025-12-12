@@ -60,6 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   secret: serverEnv.NEXTAUTH_SECRET,
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
