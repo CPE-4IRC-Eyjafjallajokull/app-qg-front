@@ -45,7 +45,7 @@ export function useSSE(url: string) {
     // Default unnamed events
     eventSource.onmessage = handleEvent;
 
-    // Upstream emits named events (e.g. "connected", "incident_declared")
+    // Upstream emits named events
     const namedEvents = [
       "connected",
       "heartbeat",

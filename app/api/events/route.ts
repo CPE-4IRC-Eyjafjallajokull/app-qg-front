@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: serverEnv.NEXTAUTH_SECRET,
+    secureCookie: true,
   });
 
   console.log("Events proxy auth debug", {
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     authHeaderPresent: !!request.headers.get("authorization"),
     host: request.headers.get("host"),
     origin: request.headers.get("origin"),
+    forwardedProto: request.headers.get("x-forwarded-proto"),
     nextauthUrl: serverEnv.NEXTAUTH_URL,
   });
 
