@@ -122,7 +122,10 @@ const SidebarFooter = React.forwardRef<
   <div
     ref={ref}
     data-slot="sidebar-footer"
-    className={cn("border-t px-4 py-3 text-xs text-muted-foreground", className)}
+    className={cn(
+      "border-t px-4 py-3 text-xs text-muted-foreground",
+      className,
+    )}
     {...props}
   />
 ));
@@ -148,7 +151,10 @@ const SidebarGroupLabel = React.forwardRef<
   <p
     ref={ref}
     data-slot="sidebar-group-label"
-    className={cn("text-xs font-semibold uppercase text-muted-foreground", className)}
+    className={cn(
+      "text-xs font-semibold uppercase text-muted-foreground",
+      className,
+    )}
     {...props}
   />
 ));
@@ -167,16 +173,17 @@ const SidebarGroupContent = React.forwardRef<
 ));
 SidebarGroupContent.displayName = "SidebarGroupContent";
 
-const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
-  ({ className, ...props }, ref) => (
-    <ul
-      ref={ref}
-      data-slot="sidebar-menu"
-      className={cn("flex flex-col gap-1", className)}
-      {...props}
-    />
-  ),
-);
+const SidebarMenu = React.forwardRef<
+  HTMLUListElement,
+  React.ComponentProps<"ul">
+>(({ className, ...props }, ref) => (
+  <ul
+    ref={ref}
+    data-slot="sidebar-menu"
+    className={cn("flex flex-col gap-1", className)}
+    {...props}
+  />
+));
 SidebarMenu.displayName = "SidebarMenu";
 
 const SidebarMenuItem = React.forwardRef<

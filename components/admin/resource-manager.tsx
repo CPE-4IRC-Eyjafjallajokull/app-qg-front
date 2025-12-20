@@ -112,11 +112,14 @@ export function ResourceManager({ config }: { config: AdminResource }) {
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(
-    null,
-  );
-  const [deleteTarget, setDeleteTarget] =
-    useState<Record<string, unknown> | null>(null);
+  const [editingItem, setEditingItem] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
 
   const emptyForm = useMemo(() => {
     return createFields.reduce<FormState>((acc, field) => {

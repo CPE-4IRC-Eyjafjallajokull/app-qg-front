@@ -20,8 +20,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const initialResourceKey =
-  adminNavigation[0]?.groups[0]?.items[0]?.key ?? "";
+const initialResourceKey = adminNavigation[0]?.groups[0]?.items[0]?.key ?? "";
 
 const resourceByKey = new Map(
   adminResources.map((resource) => [resource.key, resource]),
@@ -88,7 +87,10 @@ export function AdminPanel() {
 
           <div className="flex-1 space-y-6 px-4 py-6 md:px-8">
             {activeResource ? (
-              <ResourceManager key={activeResource.key} config={activeResource} />
+              <ResourceManager
+                key={activeResource.key}
+                config={activeResource}
+              />
             ) : (
               <div className="text-sm text-muted-foreground">
                 Aucune ressource configuree.

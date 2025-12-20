@@ -37,7 +37,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT | null> {
 
     const expiresAt = refreshedTokens.expires_in
       ? Math.floor(Date.now() / 1000) + refreshedTokens.expires_in
-      : token.expiresAt ?? 0;
+      : (token.expiresAt ?? 0);
 
     return {
       ...token,

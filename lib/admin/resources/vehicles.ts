@@ -170,7 +170,11 @@ export const vehiclesResources: AdminResource[] = [
     idFields: ["vehicle_type_id", "consumable_type_id"],
     fields: [
       { key: "vehicle_type_id", label: "Vehicle type id", required: true },
-      { key: "consumable_type_id", label: "Consumable type id", required: true },
+      {
+        key: "consumable_type_id",
+        label: "Consumable type id",
+        required: true,
+      },
       { key: "capacity_quantity", label: "Capacity qty", type: "number" },
       { key: "initial_quantity", label: "Initial qty", type: "number" },
       { key: "is_applicable", label: "Is applicable", type: "boolean" },
@@ -199,10 +203,16 @@ export const vehiclesResources: AdminResource[] = [
     idFields: ["vehicle_id", "consumable_type_id"],
     fields: [
       { key: "vehicle_id", label: "Vehicle id", required: true },
-      { key: "consumable_type_id", label: "Consumable type id", required: true },
+      {
+        key: "consumable_type_id",
+        label: "Consumable type id",
+        required: true,
+      },
       { key: "current_quantity", label: "Current qty", type: "number" },
     ],
-    updateFields: [{ key: "current_quantity", label: "Current qty", type: "number" }],
+    updateFields: [
+      { key: "current_quantity", label: "Current qty", type: "number" },
+    ],
     readFields: [
       "vehicle_id",
       "consumable_type_id",
