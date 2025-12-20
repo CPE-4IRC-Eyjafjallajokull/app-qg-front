@@ -1,22 +1,19 @@
+import { auth } from "@/auth";
 import { serverEnv } from "@/lib/env.server";
-import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: serverEnv.NEXTAUTH_SECRET,
-    secureCookie: true,
-  });
+  const session = await auth();
+  const accessToken = session?.accessToken;
 
   console.log("Events proxy auth debug", {
-    hasToken: !!token,
-    sub: token?.sub,
-    accessTokenPreview: token?.accessToken
-      ? `${token.accessToken.slice(0, 10)}...`
+    hasToken: !!accessToken,
+    sub: session?.user?.id,
+    accessTokenPreview: accessToken
+      ? `${accessToken.slice(0, 10)}...`
       : undefined,
     authHeaderPresent: !!request.headers.get("authorization"),
     host: request.headers.get("host"),
@@ -25,7 +22,7 @@ export async function GET(request: NextRequest) {
     nextauthUrl: serverEnv.NEXTAUTH_URL,
   });
 
-  if (!token?.accessToken) {
+  if (!accessToken) {
     console.warn("Events proxy blocked: no access token in JWT");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -35,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     const upstream = await fetch(target, {
       headers: {
-        Authorization: `Bearer ${token.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         Accept: "text/event-stream",
       },
       cache: "no-store",

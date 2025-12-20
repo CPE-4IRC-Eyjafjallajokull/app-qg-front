@@ -4,6 +4,8 @@ import type { DefaultSession } from "next-auth";
 declare module "next-auth" {
   interface Session {
     error?: string;
+    accessToken?: string;
+    expiresAt?: number;
     user: {
       id: string;
       // Ajoutez ici d'autres propriétés si nécessaire (ex: role)

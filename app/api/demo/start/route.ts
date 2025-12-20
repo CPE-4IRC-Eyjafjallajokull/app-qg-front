@@ -1,19 +1,16 @@
+import { auth } from "@/auth";
 import { serverEnv } from "@/lib/env.server";
-import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: serverEnv.NEXTAUTH_SECRET,
-    secureCookie: true,
-  });
+  const session = await auth();
+  const accessToken = session?.accessToken;
 
   console.log("Demo incident proxy auth debug", {
-    hasToken: !!token,
-    sub: token?.sub,
-    accessTokenPreview: token?.accessToken
-      ? `${token.accessToken.slice(0, 10)}...`
+    hasToken: !!accessToken,
+    sub: session?.user?.id,
+    accessTokenPreview: accessToken
+      ? `${accessToken.slice(0, 10)}...`
       : undefined,
     cookieNames: request.cookies.getAll().map((c) => c.name),
     authHeaderPresent: !!request.headers.get("authorization"),
@@ -23,7 +20,7 @@ export async function POST(request: NextRequest) {
     nextauthUrl: serverEnv.NEXTAUTH_URL,
   });
 
-  if (!token?.accessToken) {
+  if (!accessToken) {
     console.warn("Demo incident proxy blocked: no access token in JWT");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -36,7 +33,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(payload),
     });

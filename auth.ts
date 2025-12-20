@@ -3,14 +3,12 @@ import Keycloak from "next-auth/providers/keycloak";
 import { serverEnv } from "@/lib/env.server";
 import type { JWT } from "next-auth/jwt";
 
-// Fonction utilitaire pour rafraîchir le token
-async function refreshAccessToken(token: JWT): Promise<JWT> {
+async function refreshAccessToken(token: JWT): Promise<JWT | null> {
   try {
     if (!token.refreshToken) {
-      throw new Error("Missing refresh token");
+      return null;
     }
 
-    // Build URL encoded body without passing undefined values
     const body = new URLSearchParams();
     body.set("client_id", serverEnv.KEYCLOAK_CLIENT_ID);
     body.set("client_secret", serverEnv.KEYCLOAK_CLIENT_SECRET);
@@ -29,25 +27,28 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     const refreshedTokens = await response.json();
 
     if (!response.ok) {
-      throw refreshedTokens;
+      console.error("Error refreshing access token", refreshedTokens);
+      return null;
     }
+
+    if (!refreshedTokens.access_token) {
+      return null;
+    }
+
+    const expiresAt = refreshedTokens.expires_in
+      ? Math.floor(Date.now() / 1000) + refreshedTokens.expires_in
+      : token.expiresAt ?? 0;
 
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
-      expiresAt: Math.floor(Date.now() / 1000) + refreshedTokens.expires_in,
+      expiresAt,
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fallback à l'ancien si le nouveau n'est pas renvoyé
       error: undefined,
     };
   } catch (error) {
     console.error("Error refreshing access token", error);
-    return {
-      ...token,
-      accessToken: undefined,
-      refreshToken: undefined,
-      expiresAt: 0,
-      error: "RefreshAccessTokenError",
-    };
+    return null;
   }
 }
 
@@ -68,7 +69,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, account, user }) {
-      // 1. Première connexion
       if (account && user) {
         const expiresAt =
           account.expires_at ??
@@ -84,32 +84,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ...token,
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
-          expiresAt, // OIDC renvoie souvent ceci
+          expiresAt,
           id: user.id,
           error: undefined,
         };
       }
 
-      // 2. Token encore valide
-      if (
-        token.expiresAt &&
-        token.accessToken &&
-        Date.now() < token.expiresAt * 1000
-      ) {
-        return token;
+      if (token.expiresAt && token.accessToken) {
+        const refreshBufferSeconds = 60;
+        const now = Math.floor(Date.now() / 1000);
+        if (now < token.expiresAt - refreshBufferSeconds) {
+          return token;
+        }
       }
 
-      if (token.error === "RefreshAccessTokenError") {
-        return token;
+      const refreshedToken = await refreshAccessToken(token);
+      if (!refreshedToken) {
+        return null;
       }
 
-      // 3. Token expiré, on tente de le rafraîchir
-      return await refreshAccessToken(token);
+      return refreshedToken;
     },
 
     async session({ session, token }) {
-      // Expose only user info to the client; keep tokens server-side
       session.error = token.error;
+      session.accessToken = token.accessToken;
+      session.expiresAt = token.expiresAt;
 
       if (session.user && token.sub) {
         session.user.id = token.sub;
