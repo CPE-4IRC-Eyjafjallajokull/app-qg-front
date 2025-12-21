@@ -44,6 +44,10 @@ export async function proxyAdminRequest(
 
   const body = await extractBody(request);
 
+  console.debug(
+    `Proxying admin request to: ${targetUrl.toString()} using method ${request.method} and token ${accessToken.substring(0, 10)}...`,
+  );
+
   try {
     const upstream = await fetch(targetUrl, {
       method: request.method,

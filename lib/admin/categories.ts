@@ -1,7 +1,35 @@
-import { MapPin, Truck } from "lucide-react";
+import {
+  AlertTriangle,
+  HeartPulse,
+  LifeBuoy,
+  MapPin,
+  Truck,
+  Users,
+} from "lucide-react";
 import type { AdminCategory } from "@/lib/admin/types";
 
 export const adminCategories: AdminCategory[] = [
+  {
+    key: "incidents",
+    label: "Incidents",
+    description: "Gestion des incidents et phases.",
+    prefix: "/incidents",
+    icon: AlertTriangle,
+  },
+  {
+    key: "interventions",
+    label: "Interventions",
+    description: "Suivi des interventions.",
+    prefix: "/interventions",
+    icon: LifeBuoy,
+  },
+  {
+    key: "casualties",
+    label: "Victimes",
+    description: "Gestion des victimes et transports.",
+    prefix: "/casualties",
+    icon: HeartPulse,
+  },
   {
     key: "vehicles",
     label: "Véhicules",
@@ -15,5 +43,12 @@ export const adminCategories: AdminCategory[] = [
     description: "Gestion des points d'intérêt et leurs ressources.",
     prefix: "/interest-points",
     icon: MapPin,
+  },
+  {
+    key: "operators",
+    label: "Operateurs",
+    description: "Gestion des operateurs.",
+    prefix: "/operators",
+    icon: Users,
   },
 ];
