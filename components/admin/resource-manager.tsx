@@ -8,10 +8,21 @@ import {
   type FormEvent,
 } from "react";
 import { adminRequest } from "@/lib/admin.service";
-import type { AdminResource, FieldType } from "@/lib/admin/types";
+import type { AdminResource } from "@/lib/admin/types";
+import { getVisibleFields } from "@/lib/admin/types";
+import {
+  formatValue,
+  getInputType,
+  isBlank,
+  parseValue,
+  toLabel,
+  type FormState,
+} from "@/lib/admin/field-utils";
+import { useReferenceResolver } from "@/hooks/useReferenceResolver";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReferenceSelect } from "@/components/admin/reference-select";
 import {
   Table,
   TableBody,
@@ -39,74 +50,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-type FormState = Record<string, string>;
+type ResourceManagerProps = { config: AdminResource };
 
-const toLabel = (value: string) =>
-  value
-    .split("_")
-    .map((segment) =>
-      segment ? `${segment[0].toUpperCase()}${segment.slice(1)}` : "",
-    )
-    .join(" ");
-
-const isBlank = (value: string | undefined) =>
-  value === undefined || value.trim() === "";
-
-const parseValue = (raw: string, type: FieldType = "text") => {
-  if (raw.trim().toLowerCase() === "null") {
-    return null;
-  }
-
-  if (type === "boolean") {
-    const normalized = raw.trim().toLowerCase();
-    if (normalized === "true" || normalized === "1") {
-      return true;
-    }
-    if (normalized === "false" || normalized === "0") {
-      return false;
-    }
-    return undefined;
-  }
-
-  if (type === "integer") {
-    const parsed = Number.parseInt(raw, 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
-  }
-
-  if (type === "number") {
-    const parsed = Number(raw);
-    if (Number.isNaN(parsed)) {
-      return raw;
-    }
-    return parsed;
-  }
-
-  return raw;
-};
-
-const formatValue = (value: unknown, type: FieldType = "text") => {
-  if (value === null || value === undefined) {
-    return "";
-  }
-  if (type === "boolean") {
-    return value ? "true" : "false";
-  }
-  return String(value);
-};
-
-const displayValue = (value: unknown, type?: FieldType) => {
-  const formatted = formatValue(value, type);
-  return formatted === "" ? "-" : formatted;
-};
-
-const getInputType = (type: FieldType = "text") => {
-  if (type === "number" || type === "integer") {
-    return "number";
-  }
-  return "text";
-};
-
-export function ResourceManager({ config }: { config: AdminResource }) {
+export function ResourceManager({ config }: ResourceManagerProps) {
   const createFields = config.fields;
   const updateFields = config.updateFields ?? config.fields;
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
@@ -120,6 +66,7 @@ export function ResourceManager({ config }: { config: AdminResource }) {
     string,
     unknown
   > | null>(null);
+  const [referenceRefreshKey, setReferenceRefreshKey] = useState(0);
 
   const emptyForm = useMemo(() => {
     return createFields.reduce<FormState>((acc, field) => {
@@ -289,6 +236,20 @@ export function ResourceManager({ config }: { config: AdminResource }) {
   const canDelete = config.supportsDelete !== false;
   const actionCount = (canUpdate ? 1 : 0) + (canDelete ? 1 : 0);
 
+  // Get visible fields (filters out hidden fields)
+  const displayFields = useMemo(
+    () => getVisibleFields(config.readFields),
+    [config.readFields],
+  );
+
+  // Use the reference resolver hook
+  const { getDisplayValue } = useReferenceResolver({
+    fields: config.fields,
+    readFields: displayFields,
+    cacheKey: config.key,
+    refreshKey: referenceRefreshKey,
+  });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -303,7 +264,14 @@ export function ResourceManager({ config }: { config: AdminResource }) {
             <p className="text-sm text-muted-foreground">
               {editingItem ? "Mode edition" : "Nouvelle entree"}
             </p>
-            <Button variant="outline" onClick={fetchItems} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReferenceRefreshKey((prev) => prev + 1);
+                void fetchItems();
+              }}
+              disabled={loading}
+            >
               Rafraichir
             </Button>
           </div>
@@ -317,18 +285,35 @@ export function ResourceManager({ config }: { config: AdminResource }) {
                       {field.label}
                       {field.required ? " *" : ""}
                     </Label>
-                    <Input
-                      id={`${config.key}-${field.key}`}
-                      type={getInputType(field.type)}
-                      placeholder={
-                        field.placeholder ??
-                        (field.type === "boolean" ? "true / false" : undefined)
-                      }
-                      value={formState[field.key] ?? ""}
-                      onChange={(event) =>
-                        handleInputChange(field.key, event.target.value)
-                      }
-                    />
+                    {field.reference ? (
+                      <ReferenceSelect
+                        id={`${config.key}-${field.key}`}
+                        fieldKey={field.key}
+                        reference={field.reference}
+                        value={formState[field.key] ?? ""}
+                        placeholder={field.placeholder}
+                        disabled={saving}
+                        refreshKey={referenceRefreshKey}
+                        onChange={(value) =>
+                          handleInputChange(field.key, value)
+                        }
+                      />
+                    ) : (
+                      <Input
+                        id={`${config.key}-${field.key}`}
+                        type={getInputType(field.type)}
+                        placeholder={
+                          field.placeholder ??
+                          (field.type === "boolean"
+                            ? "true / false"
+                            : undefined)
+                        }
+                        value={formState[field.key] ?? ""}
+                        onChange={(event) =>
+                          handleInputChange(field.key, event.target.value)
+                        }
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -364,7 +349,7 @@ export function ResourceManager({ config }: { config: AdminResource }) {
           <Table>
             <TableHeader>
               <TableRow>
-                {config.readFields.map((field) => (
+                {displayFields.map((field) => (
                   <TableHead key={field}>{toLabel(field)}</TableHead>
                 ))}
                 {actionCount > 0 ? <TableHead>Actions</TableHead> : null}
@@ -374,7 +359,7 @@ export function ResourceManager({ config }: { config: AdminResource }) {
               {items.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={config.readFields.length + actionCount}
+                    colSpan={displayFields.length + actionCount}
                     className="text-center text-sm text-muted-foreground"
                   >
                     Aucun enregistrement disponible.
@@ -385,9 +370,9 @@ export function ResourceManager({ config }: { config: AdminResource }) {
                   const idPath = buildIdPath(item);
                   return (
                     <TableRow key={idPath ?? index}>
-                      {config.readFields.map((field) => (
+                      {displayFields.map((field) => (
                         <TableCell key={`${field}-${index}`}>
-                          {displayValue(item[field])}
+                          {getDisplayValue(item, field)}
                         </TableCell>
                       ))}
                       {actionCount > 0 ? (

@@ -1,9 +1,13 @@
-import { AdminPanel } from "@/components/admin/admin-panel";
+import { redirect } from "next/navigation";
+import {
+  adminResources,
+  getAdminPath,
+  getAdminResourceByKey,
+} from "@/lib/admin/registry";
 
 export default function AdminPage() {
-  return (
-    <div className="min-h-screen bg-muted/30">
-      <AdminPanel />
-    </div>
-  );
+  const defaultResource =
+    getAdminResourceByKey("vehicles") ?? adminResources[0];
+  const target = defaultResource ? getAdminPath(defaultResource) : "/";
+  redirect(target);
 }
