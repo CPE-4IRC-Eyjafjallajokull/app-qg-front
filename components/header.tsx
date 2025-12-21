@@ -2,6 +2,20 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@/components/ui/navigation-menu";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import Link from "next/link";
 import { Menu, LogOut, User } from "lucide-react";
 
@@ -27,13 +41,19 @@ export function Header() {
           QG
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
-          {navItems.map(({ href, label }) => (
-            <Link key={href} href={href} className={navLinkClass}>
-              {label}
-            </Link>
-          ))}
-        </nav>
+        <NavigationMenu className="hidden md:flex">
+          <NavigationMenuList className="gap-6">
+            {navItems.map(({ href, label }) => (
+              <NavigationMenuItem key={href}>
+                <NavigationMenuLink asChild>
+                  <Link href={href} className={navLinkClass}>
+                    {label}
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
+          </NavigationMenuList>
+        </NavigationMenu>
 
         <div className="flex items-center gap-2">
           {user ? (
@@ -63,14 +83,41 @@ export function Header() {
               </Button>
             </Link>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Open menu"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="p-0">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <NavigationMenu className="w-full px-4 pb-6">
+                <NavigationMenuList className="flex-col items-start gap-3">
+                  {navItems.map(({ href, label }) => (
+                    <NavigationMenuItem key={href} className="w-full">
+                      <SheetClose asChild>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            href={href}
+                            className="text-base font-medium hover:text-muted-foreground transition-colors"
+                          >
+                            {label}
+                          </Link>
+                        </NavigationMenuLink>
+                      </SheetClose>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
