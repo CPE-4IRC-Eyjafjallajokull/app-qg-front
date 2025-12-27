@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
-import { Footer } from "@/components/footer";
+import { FooterGuard } from "@/components/footer-guard";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -33,7 +33,7 @@ export default function RootLayout({
         <AuthProvider>
           <div className="flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>
-            <Footer />
+            <FooterGuard />
           </div>
         </AuthProvider>
         <Toaster />
