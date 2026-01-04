@@ -4,6 +4,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.qg-map-popup.maplibregl-popup .maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.qg-map-popup.maplibregl-popup .maplibregl-popup-tip {
+  display: none !important;
+}
+
+.qg-map-popup.maplibregl-popup .maplibregl-popup-content > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

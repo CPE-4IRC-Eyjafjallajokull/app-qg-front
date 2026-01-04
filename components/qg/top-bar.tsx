@@ -62,9 +62,6 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button asChild variant="secondary" size="sm" className="transition-none">
-          <Link href="/demo">Flux SSE</Link>
-        </Button>
         <Button asChild variant="outline" size="sm" className="transition-none">
           <Link href="/admin" className="flex items-center gap-1">
             <ShieldCheck className="h-4 w-4" />

@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLiveEvents } from "@/components/live-events-provider";
 
 type SidePanelProps = {
   incidents: Incident[];
@@ -51,6 +52,7 @@ const vehicleStatusLabel: Record<Vehicle["status"], string> = {
 };
 
 export function SidePanel({ incidents, vehicles }: SidePanelProps) {
+  const { isConnected } = useLiveEvents();
   const activeIncidents = incidents.filter((incident) =>
     ["new", "assigned"].includes(incident.status),
   );
@@ -70,7 +72,16 @@ export function SidePanel({ incidents, vehicles }: SidePanelProps) {
               Notifications QG
             </h2>
           </div>
-          <Badge className="bg-slate-900 text-white transition-none">Live</Badge>
+          <Badge
+            className={cn(
+              "transition-none",
+              isConnected
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200 text-slate-700",
+            )}
+          >
+            {isConnected ? "Live" : "Hors ligne"}
+          </Badge>
         </div>
 
         <Tabs
@@ -106,7 +117,9 @@ export function SidePanel({ incidents, vehicles }: SidePanelProps) {
                           {incident.description}
                         </p>
                       </div>
-                      <Badge className={incidentSeverityTone[incident.severity]}>
+                      <Badge
+                        className={incidentSeverityTone[incident.severity]}
+                      >
                         {incident.severity.toUpperCase()}
                       </Badge>
                     </div>
@@ -119,7 +132,10 @@ export function SidePanel({ incidents, vehicles }: SidePanelProps) {
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
-                          className={cn("border", incidentStatusTone[incident.status])}
+                          className={cn(
+                            "border",
+                            incidentStatusTone[incident.status],
+                          )}
                         >
                           {incidentStatusLabel[incident.status]}
                         </Badge>
@@ -154,7 +170,10 @@ export function SidePanel({ incidents, vehicles }: SidePanelProps) {
                       </div>
                       <Badge
                         variant="outline"
-                        className={cn("border", vehicleStatusTone[vehicle.status])}
+                        className={cn(
+                          "border",
+                          vehicleStatusTone[vehicle.status],
+                        )}
                       >
                         {vehicleStatusLabel[vehicle.status]}
                       </Badge>

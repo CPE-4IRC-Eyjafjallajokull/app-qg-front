@@ -7,13 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  AlertTriangle,
-  Crosshair,
-  Radio,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, Crosshair, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const notify = (label: string) => () => {
@@ -38,12 +32,6 @@ const actions = [
     label: "Centrer sur Lyon",
     icon: Crosshair,
     onClick: notify("Recentre carte"),
-  },
-  {
-    id: "sse",
-    label: "Flux SSE",
-    icon: Radio,
-    href: "/demo",
   },
   {
     id: "admin",

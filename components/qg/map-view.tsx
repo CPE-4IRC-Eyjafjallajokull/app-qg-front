@@ -1,8 +1,17 @@
 "use client";
 
-import Map, { Marker, NavigationControl } from "react-map-gl/maplibre";
+import type { ReactNode } from "react";
+import Map, {
+  NavigationControl,
+  type MapLayerMouseEvent,
+} from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
-import type { Incident, Vehicle } from "@/types/qg";
+import type {
+  Incident,
+  InterestPoint,
+  InterestPointKind,
+  Vehicle,
+} from "@/types/qg";
 import {
   LYON_BOUNDS,
   LYON_CENTER,
@@ -11,28 +20,43 @@ import {
   MAP_MIN_ZOOM,
   MAP_STYLE_URL,
 } from "@/lib/map/config";
-import { AlertTriangle, Truck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { IncidentMarkers } from "@/components/qg/map/incident-markers";
+import { VehicleMarkers } from "@/components/qg/map/vehicle-markers";
+import { InterestPointMarkers } from "@/components/qg/map/interest-point-markers";
 
 type MapViewProps = {
   incidents: Incident[];
   vehicles: Vehicle[];
+  interestPoints?: InterestPoint[];
+  interestPointKinds?: InterestPointKind[];
+  onMapClick?: (location: { latitude: number; longitude: number }) => void;
+  children?: ReactNode;
 };
 
-const incidentTone: Record<Incident["severity"], string> = {
-  critical: "bg-red-600 text-white",
-  high: "bg-amber-500 text-white",
-  medium: "bg-orange-400 text-white",
-  low: "bg-emerald-500 text-white",
-};
+export default function MapView({
+  incidents,
+  vehicles,
+  interestPoints = [],
+  interestPointKinds = [],
+  onMapClick,
+  children,
+}: MapViewProps) {
+  const handleMapClick = (event: MapLayerMouseEvent) => {
+    const target = event.originalEvent?.target as HTMLElement | null;
+    if (target?.closest?.("[data-map-interactive='true']")) {
+      return;
+    }
 
-const vehicleTone: Record<Vehicle["status"], string> = {
-  available: "bg-emerald-600 text-white",
-  busy: "bg-slate-900 text-white",
-  maintenance: "bg-slate-400 text-white",
-};
+    if (!onMapClick) {
+      return;
+    }
 
-export default function MapView({ incidents, vehicles }: MapViewProps) {
+    onMapClick({
+      latitude: event.lngLat.lat,
+      longitude: event.lngLat.lng,
+    });
+  };
+
   return (
     <div className="h-full w-full">
       <Map
@@ -49,47 +73,16 @@ export default function MapView({ incidents, vehicles }: MapViewProps) {
         dragRotate={false}
         touchPitch={false}
         attributionControl
+        onClick={handleMapClick}
         style={{ width: "100%", height: "100%" }}
       >
-        {incidents.map((incident) => (
-          <Marker
-            key={incident.id}
-            latitude={incident.location.lat}
-            longitude={incident.location.lng}
-            anchor="bottom"
-          >
-            <div
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full border border-white/70 shadow-lg",
-                incidentTone[incident.severity],
-              )}
-              aria-label={incident.title}
-              title={incident.title}
-            >
-              <AlertTriangle className="h-4 w-4" />
-            </div>
-          </Marker>
-        ))}
-
-        {vehicles.map((vehicle) => (
-          <Marker
-            key={vehicle.id}
-            latitude={vehicle.location.lat}
-            longitude={vehicle.location.lng}
-            anchor="center"
-          >
-            <div
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full border border-white/70 shadow-md",
-                vehicleTone[vehicle.status],
-              )}
-              aria-label={vehicle.callSign}
-              title={vehicle.callSign}
-            >
-              <Truck className="h-4 w-4" />
-            </div>
-          </Marker>
-        ))}
+        <InterestPointMarkers
+          interestPoints={interestPoints}
+          interestPointKinds={interestPointKinds}
+        />
+        <IncidentMarkers incidents={incidents} />
+        <VehicleMarkers vehicles={vehicles} />
+        {children}
 
         <NavigationControl position="bottom-left" showCompass={false} />
       </Map>

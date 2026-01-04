@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { FooterGuard } from "@/components/footer-guard";
+import { LiveEventsProvider } from "@/components/live-events-provider";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <AuthProvider>
-          <div className="flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
-            <FooterGuard />
-          </div>
+          <LiveEventsProvider>
+            <div className="flex min-h-screen flex-col">
+              <div className="flex-1">{children}</div>
+              <FooterGuard />
+            </div>
+          </LiveEventsProvider>
         </AuthProvider>
         <Toaster />
       </body>
