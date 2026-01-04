@@ -49,6 +49,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/error-message";
 
 type ResourceManagerProps = { config: AdminResource };
 
@@ -103,7 +104,9 @@ export function ResourceManager({ config }: ResourceManagerProps) {
       setItems(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch", error);
-      toast.error(`Erreur de chargement: ${config.title}`);
+      toast.error(
+        formatErrorMessage(`Erreur de chargement: ${config.title}`, error),
+      );
     } finally {
       setLoading(false);
     }
@@ -197,7 +200,12 @@ export function ResourceManager({ config }: ResourceManagerProps) {
       await fetchItems();
     } catch (error) {
       console.error("Save error", error);
-      toast.error(`Erreur lors de la sauvegarde: ${config.title}`);
+      toast.error(
+        formatErrorMessage(
+          `Erreur lors de la sauvegarde: ${config.title}`,
+          error,
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -225,7 +233,12 @@ export function ResourceManager({ config }: ResourceManagerProps) {
       await fetchItems();
     } catch (error) {
       console.error("Delete error", error);
-      toast.error(`Erreur lors de la suppression: ${config.title}`);
+      toast.error(
+        formatErrorMessage(
+          `Erreur lors de la suppression: ${config.title}`,
+          error,
+        ),
+      );
     } finally {
       setSaving(false);
     }

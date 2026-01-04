@@ -39,6 +39,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/error-message";
 
 type VehicleRecord = Record<string, unknown>;
 
@@ -94,7 +95,9 @@ export function VehiclesList() {
       setItems(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch vehicles", error);
-      toast.error("Erreur lors du chargement des vehicules.");
+      toast.error(
+        formatErrorMessage("Erreur lors du chargement des vehicules.", error),
+      );
     } finally {
       setLoading(false);
     }
@@ -157,7 +160,9 @@ export function VehiclesList() {
       await fetchVehicles();
     } catch (error) {
       console.error("Create vehicle error", error);
-      toast.error("Erreur lors de la creation du vehicule.");
+      toast.error(
+        formatErrorMessage("Erreur lors de la creation du vehicule.", error),
+      );
     } finally {
       setSaving(false);
     }

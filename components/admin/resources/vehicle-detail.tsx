@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { formatErrorMessage } from "@/lib/error-message";
 
 type VehicleRecord = Record<string, unknown>;
 type VehicleConsumableType = {
@@ -131,7 +132,9 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
       setFormState(nextState);
     } catch (error) {
       console.error("Failed to fetch vehicle", error);
-      toast.error("Erreur lors du chargement du vehicule.");
+      toast.error(
+        formatErrorMessage("Erreur lors du chargement du vehicule.", error),
+      );
     } finally {
       setLoadingVehicle(false);
     }
@@ -169,7 +172,12 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
       setConsumableTypes(Array.isArray(typesData) ? typesData : []);
     } catch (error) {
       console.error("Failed to fetch related data", error);
-      toast.error("Erreur lors du chargement des donnees associees.");
+      toast.error(
+        formatErrorMessage(
+          "Erreur lors du chargement des donnees associees.",
+          error,
+        ),
+      );
     } finally {
       setLoadingRelated(false);
     }
@@ -225,7 +233,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
       await fetchVehicle();
     } catch (error) {
       console.error("Failed to update vehicle", error);
-      toast.error("Erreur lors de la mise a jour.");
+      toast.error(formatErrorMessage("Erreur lors de la mise a jour.", error));
     } finally {
       setSaving(false);
     }
@@ -279,7 +287,9 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
       await fetchRelated();
     } catch (error) {
       console.error("Failed to add consumable", error);
-      toast.error("Erreur lors de l'ajout du consommable.");
+      toast.error(
+        formatErrorMessage("Erreur lors de l'ajout du consommable.", error),
+      );
     } finally {
       setCreatingConsumable(false);
     }
