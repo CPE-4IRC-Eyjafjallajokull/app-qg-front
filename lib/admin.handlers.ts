@@ -61,7 +61,6 @@ export async function proxyAdminRequest(
     }
 
     const responseBody = await upstream.text();
-    console.log("Upstream response body:", responseBody);
     const responseHeaders = new Headers();
     const upstreamContentType = upstream.headers.get("content-type");
     responseHeaders.set(

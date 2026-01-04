@@ -31,6 +31,32 @@ export type Vehicle = {
   station?: string;
 };
 
+export type InterestPoint = {
+  name: string;
+  address: string;
+  zipcode: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  interest_point_kind_id: string;
+  interest_point_id: string;
+};
+
+export type InterestPointCreatePayload = {
+  name: string;
+  address: string;
+  zipcode: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  interest_point_kind_id: string;
+};
+
+export type InterestPointKind = {
+  interest_point_kind_id: string;
+  label: string;
+};
+
 export type OperatorCommand = {
   id: string;
   label: string;

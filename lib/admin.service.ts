@@ -1,3 +1,6 @@
+import { fetchWithAuth } from "@/lib/auth-redirect";
+import { getErrorMessage, parseResponseBody } from "@/lib/api-response";
+
 export type AdminRequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
@@ -24,7 +27,7 @@ export async function adminRequest<T>(
   const normalizedPath = path.replace(/^\/+/, ""); // Remove leading slashes
   const url = `/api/admin/${normalizedPath}${queryString ? `?${queryString}` : ""}`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method,
     headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -36,14 +39,12 @@ export async function adminRequest<T>(
     return undefined as T;
   }
 
-  const data = await response.json().catch(() => null);
+  const parsedBody = await parseResponseBody(response);
 
   if (!response.ok) {
-    const message =
-      (data && typeof data === "object" && "error" in data && data.error) ||
-      "Request failed";
+    const message = getErrorMessage(response, parsedBody);
     throw new Error(String(message));
   }
 
-  return data as T;
+  return parsedBody.json as T;
 }
