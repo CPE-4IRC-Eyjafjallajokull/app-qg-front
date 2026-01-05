@@ -1,4 +1,4 @@
-import { proxyAdminRequest } from "@/lib/admin.handlers";
+import { proxyAdminRequest } from "@/lib/api-proxy";
 import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
