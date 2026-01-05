@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Marker } from "react-map-gl/maplibre";
 import type { LucideIcon } from "lucide-react";
 import {
   FireExtinguisher,
@@ -7,16 +6,11 @@ import {
   Hospital,
   MapPin,
   Shield,
-  ToolCase,
+  Wrench,
 } from "lucide-react";
 import type { InterestPoint, InterestPointKind } from "@/types/qg";
+import { MarkerWithPopover } from "@/components/qg/map/marker-with-popover";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 type InterestPointMarkersProps = {
@@ -43,7 +37,7 @@ const getKindPresentation = (label?: string): KindPresentation => {
   if (normalized.includes("maintenance") || normalized.includes("vehicule")) {
     return {
       label: label ?? "Centre maintenance",
-      Icon: ToolCase,
+      Icon: Wrench,
       markerClassName: "bg-amber-50 text-amber-900 ring-2 ring-amber-400/80",
       badgeClassName: "border-amber-200 bg-amber-100 text-amber-900",
     };
@@ -114,54 +108,40 @@ export function InterestPointMarkers({
         const presentation = getKindPresentation(kindLabel);
 
         return (
-          <Marker
+          <MarkerWithPopover
             key={point.interest_point_id}
             latitude={point.latitude}
             longitude={point.longitude}
             anchor="bottom"
+            label={point.name}
+            markerClassName={cn("h-7 w-7", presentation.markerClassName)}
+            icon={<presentation.Icon className="h-4 w-4" />}
           >
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  className={cn(
-                    "h-7 w-7 rounded-full border border-white/70 shadow-md transition hover:shadow-lg focus-visible:ring-2 focus-visible:ring-sky-500/60",
-                    presentation.markerClassName,
-                  )}
-                  data-map-interactive="true"
-                  aria-label={point.name}
+            <div className="flex items-start gap-3 p-3">
+              <div
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/70",
+                  presentation.markerClassName,
+                )}
+              >
+                <presentation.Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {point.name}
+                </p>
+                <p className="text-xs text-slate-600">{point.address}</p>
+                <p className="text-xs text-slate-600">
+                  {point.zipcode} {point.city}
+                </p>
+                <Badge
+                  className={cn("mt-1 text-xs", presentation.badgeClassName)}
                 >
-                  <presentation.Icon className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent side="top" align="center" className="w-64 p-0">
-                <div className="flex items-start gap-3 p-3">
-                  <div
-                    className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full border border-white/70",
-                      presentation.markerClassName,
-                    )}
-                  >
-                    <presentation.Icon className="h-4 w-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-900">
-                      {point.name}
-                    </p>
-                    <p className="text-xs text-slate-600">{point.address}</p>
-                    <p className="text-xs text-slate-600">
-                      {point.zipcode} {point.city}
-                    </p>
-                    <Badge className={cn("mt-1", presentation.badgeClassName)}>
-                      {presentation.label}
-                    </Badge>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </Marker>
+                  {presentation.label}
+                </Badge>
+              </div>
+            </div>
+          </MarkerWithPopover>
         );
       })}
     </>
