@@ -24,6 +24,12 @@ import {
   type IncidentPhaseType,
   type IncidentDeclarationLocation,
 } from "@/lib/incidents/service";
+import {
+  fetchVehicles,
+  mapVehicleToUi,
+  type ApiVehicleDetail,
+  type VehiclePositionUpdate,
+} from "@/lib/vehicles/service";
 
 export function HomeScreen() {
   const { interestPoints, interestPointKinds, refresh } = useInterestPoints();
@@ -54,6 +60,7 @@ export function HomeScreen() {
     () => [
       "vehicle_update",
       "vehicle_position",
+      "vehicle_position_update",
       "vehicle",
       "vehicles",
       "vehicles_snapshot",
@@ -148,11 +155,40 @@ export function HomeScreen() {
     }
 
     const data = payload as Record<string, unknown>;
-    if (Array.isArray(data.vehicles)) {
-      setVehicles(data.vehicles as Vehicle[]);
+
+    // Gestion de vehicle_position_update
+    if (event.event === "vehicle_position_update") {
+      const update = data as VehiclePositionUpdate;
+      if (update.immatriculation && update.position) {
+        setVehicles((prev) =>
+          prev.map((vehicle) => {
+            if (vehicle.callSign === update.immatriculation) {
+              return {
+                ...vehicle,
+                location: {
+                  lat: update.position.lat,
+                  lng: update.position.lon,
+                },
+                updatedAt: update.timestamp,
+              };
+            }
+            return vehicle;
+          }),
+        );
+      }
       return;
     }
 
+    // Gestion des snapshots de véhicules
+    if (Array.isArray(data.vehicles)) {
+      const mapped = data.vehicles
+        .map((item) => mapVehicleToUi(item as ApiVehicleDetail))
+        .filter((item): item is Vehicle => Boolean(item));
+      setVehicles(mapped);
+      return;
+    }
+
+    // Gestion d'une mise à jour de véhicule unique
     setVehicles((prev) => upsertById(prev, data as Vehicle, getVehicleId));
   }, []);
 
@@ -180,6 +216,32 @@ export function HomeScreen() {
     };
 
     loadIncidents();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const loadVehicles = async () => {
+      try {
+        const data = await fetchVehicles();
+        if (isActive) {
+          setVehicles(data);
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error(
+            formatErrorMessage(
+              "Erreur lors du chargement des véhicules.",
+              error,
+            ),
+          );
+        }
+      }
+    };
+
+    loadVehicles();
     return () => {
       isActive = false;
     };

@@ -45,7 +45,7 @@ export function MapClickPopup({
   isCreatingInterestPoint,
 }: MapClickPopupProps) {
   const [phaseTypeId, setPhaseTypeId] = useState(() =>
-    phaseTypes.length > 0 ? phaseTypes[0].phase_type_id : ""
+    phaseTypes.length > 0 ? phaseTypes[0].phase_type_id : "",
   );
   const [priority, setPriority] = useState("");
 
