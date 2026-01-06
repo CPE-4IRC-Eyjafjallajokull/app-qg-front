@@ -53,7 +53,7 @@ jobs:
           NEXTAUTH_URL=http://localhost:3000
           AUTH_TRUST_HOST=true
           EOF
-          
+
           docker compose up -d --build
 
           echo "⏳ Attente du démarrage de l'application..."
