@@ -100,7 +100,7 @@ jobs:
 
       - name: OWASP ZAP - Baseline Scan
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: "http://localhost:3000"
           rules_file_name: ".zap/rules.tsv"
