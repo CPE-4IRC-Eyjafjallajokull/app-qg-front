@@ -4,4 +4,4 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 export const GET = (request: NextRequest) =>
-  proxyApiRequest(request, "geocode/reverse", "reverse geocode");
+  proxyApiRequest(request, "geo/address/reverse", "reverse geocode");

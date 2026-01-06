@@ -28,7 +28,6 @@ import {
   fetchVehicles,
   mapVehicleToUi,
   type ApiVehicleDetail,
-  type VehiclePositionUpdate,
 } from "@/lib/vehicles/service";
 
 export function HomeScreen() {
@@ -158,18 +157,28 @@ export function HomeScreen() {
 
     // Gestion de vehicle_position_update
     if (event.event === "vehicle_position_update") {
-      const update = data as VehiclePositionUpdate;
-      if (update.immatriculation && update.position) {
+      const update = data as {
+        vehicle_id: string;
+        vehicle_immatriculation: string;
+        latitude: number;
+        longitude: number;
+        timestamp: string | null;
+      };
+      if (
+        update.vehicle_immatriculation &&
+        update.latitude != null &&
+        update.longitude != null
+      ) {
         setVehicles((prev) =>
           prev.map((vehicle) => {
-            if (vehicle.callSign === update.immatriculation) {
+            if (vehicle.callSign === update.vehicle_immatriculation) {
               return {
                 ...vehicle,
                 location: {
-                  lat: update.position.lat,
-                  lng: update.position.lon,
+                  lat: update.latitude,
+                  lng: update.longitude,
                 },
-                updatedAt: update.timestamp,
+                updatedAt: update.timestamp || new Date().toISOString(),
               };
             }
             return vehicle;

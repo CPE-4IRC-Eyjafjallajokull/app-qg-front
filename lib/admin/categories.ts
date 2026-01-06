@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   HeartPulse,
-  LifeBuoy,
   MapPin,
   Truck,
   Users,

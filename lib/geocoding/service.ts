@@ -35,7 +35,7 @@ export async function reverseGeocode({
     lat: latitude.toString(),
     lon: longitude.toString(),
   });
-  const requestUrl = `/api/geocode/reverse?${params}`;
+  const requestUrl = `/api/geo/address/reverse?${params}`;
 
   const fetchOnce = async () =>
     fetchWithAuth(requestUrl, {

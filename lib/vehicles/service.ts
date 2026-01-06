@@ -53,15 +53,6 @@ export type ApiVehiclesListRead = {
   total: number;
 };
 
-export type VehiclePositionUpdate = {
-  immatriculation: string;
-  position: {
-    lat: number;
-    lon: number;
-  };
-  timestamp: string;
-};
-
 export async function fetchVehicles(): Promise<Vehicle[]> {
   const response = await fetchWithAuth("/api/vehicles", {
     method: "GET",
@@ -135,25 +126,4 @@ export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
     updatedAt: vehicle.current_position.timestamp,
     station: vehicle.base_interest_point?.name || undefined,
   };
-}
-
-export function updateVehiclePosition(
-  vehicle: Vehicle,
-  positionUpdate: VehiclePositionUpdate,
-): Vehicle {
-  return {
-    ...vehicle,
-    location: {
-      lat: positionUpdate.position.lat,
-      lng: positionUpdate.position.lon,
-    },
-    updatedAt: positionUpdate.timestamp,
-  };
-}
-
-export function findVehicleByImmatriculation(
-  vehicles: Vehicle[],
-  immatriculation: string,
-): Vehicle | undefined {
-  return vehicles.find((v) => v.callSign === immatriculation);
 }
