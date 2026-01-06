@@ -108,7 +108,7 @@ export const incidentsResources: AdminResource[] = [
   },
   {
     key: "incident-phase-dependencies",
-    title: "Dependances de phases",
+    title: "Dépendances de phases",
     description: "Relations et precedences entre phases.",
     endpoint: "phase/dependencies",
     category: "incidents",
@@ -122,7 +122,7 @@ export const incidentsResources: AdminResource[] = [
         reference: {
           resourceKey: "incident-phases",
           valueKey: "incident_phase_id",
-          labelKey: ["phase_type_id", "incident_id"],
+          labelKey: ["phase_type.label", "incident.address"],
           placeholder: "Selectionner une phase",
         },
       },
@@ -133,7 +133,7 @@ export const incidentsResources: AdminResource[] = [
         reference: {
           resourceKey: "incident-phases",
           valueKey: "incident_phase_id",
-          labelKey: ["phase_type_id", "incident_id"],
+          labelKey: ["phase_type.label", "incident.address"],
           placeholder: "Selectionner une phase",
         },
       },

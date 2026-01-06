@@ -45,7 +45,7 @@ export const casualtiesResources: AdminResource[] = [
         reference: {
           resourceKey: "incident-phases",
           valueKey: "incident_phase_id",
-          labelKey: ["phase_type_id", "incident_id"],
+          labelKey: ["phase_type.label", "incident.address"],
           placeholder: "Selectionner une phase",
         },
       },
