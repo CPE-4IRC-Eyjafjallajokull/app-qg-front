@@ -60,13 +60,13 @@ export function ReferenceSelect({
   const endpoint = resolveEndpoint(reference);
   const swrKey = endpoint
     ? [
-      "reference-options",
-      endpoint,
-      valueKey,
-      reference.labelKey,
-      reference.query,
-      refreshKey,
-    ]
+        "reference-options",
+        endpoint,
+        valueKey,
+        reference.labelKey,
+        reference.query,
+        refreshKey,
+      ]
     : null;
 
   const { data, isLoading, error } = useSWR(

@@ -91,30 +91,48 @@ export const vehiclesResources: AdminResource[] = [
         reference: {
           resourceKey: "vehicles",
           valueKey: "vehicle_id",
-          labelKey: "immatriculation",
+          labelKey: ["immatriculation", "vehicle_type.code"],
           placeholder: "Selectionner un vehicule",
         },
       },
       {
-        key: "incident_phase_id", label: "Incident phase id", required: true, reference: {
+        key: "incident_phase_id",
+        label: "Incident phase id",
+        required: true,
+        reference: {
           resourceKey: "incident-phases",
           valueKey: "incident_phase_id",
           labelKey: ["incident.address", "phase_type.label"],
           placeholder: "Selectionner une phase",
         },
       },
-      { key: "assigned_at", label: "Assigned at", placeholder: "2025-01-01T12:30:00Z", type: "datetime", required: true },
       {
-        key: "assigned_by_operator_id", label: "Assigned by operator id", reference: {
+        key: "assigned_at",
+        label: "Assigned at",
+        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+        required: true,
+      },
+      {
+        key: "assigned_by_operator_id",
+        label: "Assigned by operator id",
+        reference: {
           resourceKey: "operators",
           valueKey: "operator_id",
           labelKey: "email",
           placeholder: "Selectionner un operateur",
         },
       },
-      { key: "validated_at", label: "Validated at", placeholder: "2025-01-01T12:30:00Z", type: "datetime" },
       {
-        key: "validated_by_operator_id", label: "Validated by operator id", reference: {
+        key: "validated_at",
+        label: "Validated at",
+        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+      },
+      {
+        key: "validated_by_operator_id",
+        label: "Validated by operator id",
+        reference: {
           resourceKey: "operators",
           valueKey: "operator_id",
           labelKey: "email",
@@ -132,9 +150,19 @@ export const vehiclesResources: AdminResource[] = [
     ],
     updateFields: [
       { key: "incident_phase_id", label: "Incident phase id" },
-      { key: "assigned_at", label: "Assigned at", placeholder: "2025-01-01T12:30:00Z", type: "datetime" },
+      {
+        key: "assigned_at",
+        label: "Assigned at",
+        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+      },
       { key: "assigned_by_operator_id", label: "Assigned by operator id" },
-      { key: "validated_at", label: "Validated at", placeholder: "2025-01-01T12:30:00Z", type: "datetime" },
+      {
+        key: "validated_at",
+        label: "Validated at",
+        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+      },
       { key: "validated_by_operator_id", label: "Validated by operator id" },
       {
         key: "unassigned_at",

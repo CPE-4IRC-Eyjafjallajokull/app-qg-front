@@ -318,7 +318,10 @@ export function ResourceManager({ config }: ResourceManagerProps) {
                           id={`${config.key}-${field.key}`}
                           checked={formState[field.key] === "true"}
                           onCheckedChange={(checked) =>
-                            handleInputChange(field.key, checked ? "true" : "false")
+                            handleInputChange(
+                              field.key,
+                              checked ? "true" : "false",
+                            )
                           }
                           disabled={saving}
                         />

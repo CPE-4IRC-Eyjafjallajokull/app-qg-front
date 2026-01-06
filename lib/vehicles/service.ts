@@ -108,9 +108,9 @@ export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
   const vehicleTypeCode = vehicle.vehicle_type.code.toUpperCase();
   const vehicleType: Vehicle["type"] =
     vehicleTypeCode === "VSAV" ||
-      vehicleTypeCode === "FPT" ||
-      vehicleTypeCode === "EPA" ||
-      vehicleTypeCode === "VTU"
+    vehicleTypeCode === "FPT" ||
+    vehicleTypeCode === "EPA" ||
+    vehicleTypeCode === "VTU"
       ? vehicleTypeCode
       : "VTU";
 

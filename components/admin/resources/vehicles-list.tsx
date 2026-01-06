@@ -228,7 +228,10 @@ export function VehiclesList() {
                         id={`vehicles-${field.key}`}
                         checked={formState[field.key] === "true"}
                         onCheckedChange={(checked) =>
-                          handleInputChange(field.key, checked ? "true" : "false")
+                          handleInputChange(
+                            field.key,
+                            checked ? "true" : "false",
+                          )
                         }
                         disabled={saving}
                       />

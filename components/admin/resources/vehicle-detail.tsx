@@ -375,7 +375,10 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                             id={`vehicle-${field.key}`}
                             checked={formState[field.key] === "true"}
                             onCheckedChange={(checked) =>
-                              handleInputChange(field.key, checked ? "true" : "false")
+                              handleInputChange(
+                                field.key,
+                                checked ? "true" : "false",
+                              )
                             }
                             disabled={saving}
                           />
@@ -531,9 +534,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                         <TableCell>
                           {displayValue(item.assigned_by_operator_id)}
                         </TableCell>
-                        <TableCell>
-                          {displayValue(item.validated_at)}
-                        </TableCell>
+                        <TableCell>{displayValue(item.validated_at)}</TableCell>
                         <TableCell>
                           {displayValue(item.validated_by_operator_id)}
                         </TableCell>

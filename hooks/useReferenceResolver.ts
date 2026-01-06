@@ -80,11 +80,11 @@ export function useReferenceResolver({
   const { data: referenceDataMap, isLoading } = useSWR(
     fieldsWithReferences.length > 0
       ? [
-        "reference-resolver",
-        cacheKey,
-        refreshKey,
-        ...fieldsWithReferences.map((f) => `${f.fieldKey}:${f.endpoint}`),
-      ]
+          "reference-resolver",
+          cacheKey,
+          refreshKey,
+          ...fieldsWithReferences.map((f) => `${f.fieldKey}:${f.endpoint}`),
+        ]
       : null,
     async () => {
       const results = await Promise.all(
