@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import Map, {
   NavigationControl,
   type MapLayerMouseEvent,
@@ -21,8 +21,11 @@ import {
   MAP_STYLE_URL,
 } from "@/lib/map/config";
 import { IncidentMarkers } from "@/components/qg/map/incident-markers";
-import { VehicleMarkers } from "@/components/qg/map/vehicle-markers";
 import { InterestPointMarkers } from "@/components/qg/map/interest-point-markers";
+import {
+  VehicleLayer,
+  VEHICLE_LAYER_ID,
+} from "@/components/qg/map/vehicle-layer";
 
 type MapViewProps = {
   incidents: Incident[];
@@ -41,21 +44,30 @@ export default function MapView({
   onMapClick,
   children,
 }: MapViewProps) {
-  const handleMapClick = (event: MapLayerMouseEvent) => {
-    const target = event.originalEvent?.target as HTMLElement | null;
-    if (target?.closest?.("[data-map-interactive='true']")) {
-      return;
-    }
+  const handleMapClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      if (
+        event.features?.some((feature) => feature.layer.id === VEHICLE_LAYER_ID)
+      ) {
+        return;
+      }
 
-    if (!onMapClick) {
-      return;
-    }
+      const target = event.originalEvent?.target as HTMLElement | null;
+      if (target?.closest?.("[data-map-interactive='true']")) {
+        return;
+      }
 
-    onMapClick({
-      latitude: event.lngLat.lat,
-      longitude: event.lngLat.lng,
-    });
-  };
+      if (!onMapClick) {
+        return;
+      }
+
+      onMapClick({
+        latitude: event.lngLat.lat,
+        longitude: event.lngLat.lng,
+      });
+    },
+    [onMapClick],
+  );
 
   return (
     <div className="h-full w-full">
@@ -74,6 +86,7 @@ export default function MapView({
         touchPitch={false}
         attributionControl
         onClick={handleMapClick}
+        interactiveLayerIds={[VEHICLE_LAYER_ID]}
         style={{ width: "100%", height: "100%" }}
       >
         <InterestPointMarkers
@@ -81,7 +94,7 @@ export default function MapView({
           interestPointKinds={interestPointKinds}
         />
         <IncidentMarkers incidents={incidents} />
-        <VehicleMarkers vehicles={vehicles} />
+        <VehicleLayer vehicles={vehicles} />
         {children}
 
         <NavigationControl position="bottom-left" showCompass={false} />

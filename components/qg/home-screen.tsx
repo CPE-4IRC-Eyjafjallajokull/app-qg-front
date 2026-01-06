@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CommandDock } from "@/components/qg/command-dock";
 import MapView from "@/components/qg/map-view";
 import { MapClickPopup } from "@/components/qg/map/map-click-popup";
@@ -12,7 +12,7 @@ import { createInterestPoint } from "@/lib/interest-points/service";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/error-message";
 import type { Incident, Vehicle } from "@/types/qg";
-import { useLiveEventList } from "@/hooks/useLiveEvent";
+import { useLiveEvent } from "@/hooks/useLiveEvent";
 import type { SSEEvent } from "@/lib/sse/types";
 import { reverseGeocode } from "@/lib/geocoding/service";
 import {
@@ -24,12 +24,9 @@ import {
   type IncidentPhaseType,
   type IncidentDeclarationLocation,
 } from "@/lib/incidents/service";
-import {
-  fetchVehicles,
-  mapVehicleToUi,
-  type ApiVehicleDetail,
-} from "@/lib/vehicles/service";
+import { fetchVehicles } from "@/lib/vehicles/service";
 
+const SSE_FLUSH_MS = 100;
 export function HomeScreen() {
   const { interestPoints, interestPointKinds, refresh } = useInterestPoints();
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -42,167 +39,208 @@ export function HomeScreen() {
   const [isDeclaringIncident, setIsDeclaringIncident] = useState(false);
   const [phaseTypes, setPhaseTypes] = useState<IncidentPhaseType[]>([]);
   const [isLoadingPhaseTypes, setIsLoadingPhaseTypes] = useState(false);
+  const incidentStoreRef = useRef(new Map<string, Incident>());
+  const incidentFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vehicleStoreRef = useRef(new Map<string, Vehicle>());
+  const vehicleFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const incidentEvents = useMemo(
-    () => [
-      "new_incident",
-      "incident_update",
-      "incident_ack",
-      "vehicle_assignment_proposal",
-      "incident",
-      "incidents",
-      "incidents_snapshot",
-    ],
-    [],
-  );
-  const vehicleEvents = useMemo(
-    () => [
-      "vehicle_update",
-      "vehicle_position",
-      "vehicle_position_update",
-      "vehicle",
-      "vehicles",
-      "vehicles_snapshot",
-    ],
-    [],
+  const flushIncidents = useCallback(() => {
+    incidentFlushRef.current = null;
+    setIncidents(Array.from(incidentStoreRef.current.values()));
+  }, []);
+
+  const scheduleIncidentFlush = useCallback(() => {
+    if (incidentFlushRef.current) {
+      return;
+    }
+    incidentFlushRef.current = setTimeout(() => {
+      flushIncidents();
+    }, SSE_FLUSH_MS);
+  }, [flushIncidents]);
+
+  const applyIncidentSnapshot = useCallback(
+    (items: Incident[]) => {
+      const next = new Map<string, Incident>();
+      items.filter(isActiveIncident).forEach((incident) => {
+        if (incident.id) {
+          next.set(incident.id, incident);
+        }
+      });
+      incidentStoreRef.current = next;
+      scheduleIncidentFlush();
+    },
+    [scheduleIncidentFlush],
   );
 
-  const handleIncidentEvent = useCallback((event: SSEEvent) => {
-    if (event.event === "vehicle_assignment_proposal") {
-      const envelope = event.data;
-      if (envelope && typeof envelope === "object" && "payload" in envelope) {
-        const payload = (envelope as Record<string, unknown>).payload as
-          | Record<string, unknown>
-          | undefined;
-        const proposals = Array.isArray(payload?.proposals)
-          ? payload?.proposals
-          : [];
-        const missing =
-          payload?.missing_by_vehicle_type &&
-          typeof payload.missing_by_vehicle_type === "object"
-            ? Object.keys(
-                payload.missing_by_vehicle_type as Record<string, unknown>,
-              )
-            : [];
-        const proposalCount = proposals.length;
-        const missingCount = missing.length;
-        toast.success(
-          `Proposition d'affectation reçue (${proposalCount} véhicule${proposalCount > 1 ? "s" : ""}, ${missingCount} type${missingCount > 1 ? "s" : ""} manquant${missingCount > 1 ? "s" : ""}).`,
+  const applyIncidentUpdate = useCallback(
+    (incident: Incident) => {
+      if (!incident.id) {
+        return;
+      }
+      const store = incidentStoreRef.current;
+      if (!isActiveIncident(incident)) {
+        if (store.delete(incident.id)) {
+          scheduleIncidentFlush();
+        }
+        return;
+      }
+      const current = store.get(incident.id);
+      store.set(incident.id, current ? { ...current, ...incident } : incident);
+      scheduleIncidentFlush();
+    },
+    [scheduleIncidentFlush],
+  );
+
+  const flushVehicles = useCallback(() => {
+    vehicleFlushRef.current = null;
+    setVehicles(Array.from(vehicleStoreRef.current.values()));
+  }, []);
+
+  const scheduleVehicleFlush = useCallback(() => {
+    if (vehicleFlushRef.current) {
+      return;
+    }
+    vehicleFlushRef.current = setTimeout(() => {
+      flushVehicles();
+    }, SSE_FLUSH_MS);
+  }, [flushVehicles]);
+
+  const applyVehicleSnapshot = useCallback(
+    (items: Vehicle[]) => {
+      const next = new Map<string, Vehicle>();
+      items.forEach((vehicle) => {
+        if (vehicle.id) {
+          next.set(vehicle.id, vehicle);
+        }
+      });
+      vehicleStoreRef.current = next;
+      scheduleVehicleFlush();
+    },
+    [scheduleVehicleFlush],
+  );
+
+  const applyVehiclePositionUpdate = useCallback(
+    (update: {
+      vehicle_id?: string;
+      vehicle_immatriculation?: string;
+      latitude?: number;
+      longitude?: number;
+      timestamp?: string | null;
+    }) => {
+      if (update.latitude == null || update.longitude == null) {
+        return;
+      }
+      const lat = Number(update.latitude);
+      const lng = Number(update.longitude);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        return;
+      }
+      const store = vehicleStoreRef.current;
+      const id = update.vehicle_id ?? "";
+      let current = id ? store.get(id) : undefined;
+      if (!current && update.vehicle_immatriculation) {
+        current = Array.from(store.values()).find(
+          (vehicle) => vehicle.callSign === update.vehicle_immatriculation,
         );
+      }
+      if (!current) {
         return;
       }
-      toast.success("Proposition d'affectation reçue.");
-      return;
-    }
-    const payload = event.data;
-    if (!payload) {
-      return;
-    }
+      const updatedAt = update.timestamp || new Date().toISOString();
+      if (
+        current.location.lat === lat &&
+        current.location.lng === lng &&
+        current.updatedAt === updatedAt
+      ) {
+        return;
+      }
+      store.set(current.id, {
+        ...current,
+        location: { lat, lng },
+        updatedAt,
+      });
+      scheduleVehicleFlush();
+    },
+    [scheduleVehicleFlush],
+  );
 
-    if (Array.isArray(payload)) {
-      const mapped = payload
-        .map((item) => toUiIncident(item))
-        .filter((item): item is Incident => Boolean(item))
-        .filter(isActiveIncident);
-      setIncidents(mapped);
-      return;
-    }
-
-    if (typeof payload === "object") {
+  const handleNewIncident = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
       const data = payload as Record<string, unknown>;
-      if (Array.isArray(data.incidents)) {
-        const mapped = data.incidents
-          .map((item) => toUiIncident(item))
-          .filter((item): item is Incident => Boolean(item))
-          .filter(isActiveIncident);
-        setIncidents(mapped);
-        return;
-      }
-
-      if (data.incident) {
-        const incident = toUiIncident(data.incident);
-        if (incident) {
-          setIncidents((prev) => mergeIncident(prev, incident));
-        }
-        return;
-      }
-
-      if (data.data && typeof data.data === "object") {
-        const nested = data.data as Record<string, unknown>;
-        if (nested.incident) {
-          const incident = toUiIncident(nested.incident);
-          if (incident) {
-            setIncidents((prev) => mergeIncident(prev, incident));
-          }
-          return;
-        }
-      }
-
-      const incident = toUiIncident(data);
+      const incident = data.incident
+        ? toUiIncident(data.incident)
+        : toUiIncident(data);
       if (!incident) {
         return;
       }
+      applyIncidentUpdate(incident);
+    },
+    [applyIncidentUpdate],
+  );
 
-      setIncidents((prev) => mergeIncident(prev, incident));
-    }
-  }, []);
-
-  const handleVehicleEvent = useCallback((event: SSEEvent) => {
-    const payload = event.data;
-    if (!payload || typeof payload !== "object") {
+  const handleAssignmentProposal = useCallback((event: SSEEvent) => {
+    const envelope = event.data;
+    if (envelope && typeof envelope === "object" && "payload" in envelope) {
+      const payload = (envelope as Record<string, unknown>).payload as
+        | Record<string, unknown>
+        | undefined;
+      const proposals = Array.isArray(payload?.proposals)
+        ? payload?.proposals
+        : [];
+      const missing =
+        payload?.missing_by_vehicle_type &&
+        typeof payload.missing_by_vehicle_type === "object"
+          ? Object.keys(
+              payload.missing_by_vehicle_type as Record<string, unknown>,
+            )
+          : [];
+      const proposalCount = proposals.length;
+      const missingCount = missing.length;
+      toast.success(
+        `Proposition d'affectation reçue (${proposalCount} véhicule${proposalCount > 1 ? "s" : ""}, ${missingCount} type${missingCount > 1 ? "s" : ""} manquant${missingCount > 1 ? "s" : ""}).`,
+      );
       return;
     }
+    toast.success("Proposition d'affectation reçue.");
+  }, []);
 
-    const data = payload as Record<string, unknown>;
-
-    // Gestion de vehicle_position_update
-    if (event.event === "vehicle_position_update") {
-      const update = data as {
-        vehicle_id: string;
-        vehicle_immatriculation: string;
-        latitude: number;
-        longitude: number;
-        timestamp: string | null;
-      };
-      if (
-        update.vehicle_immatriculation &&
-        update.latitude != null &&
-        update.longitude != null
-      ) {
-        setVehicles((prev) =>
-          prev.map((vehicle) => {
-            if (vehicle.callSign === update.vehicle_immatriculation) {
-              return {
-                ...vehicle,
-                location: {
-                  lat: update.latitude,
-                  lng: update.longitude,
-                },
-                updatedAt: update.timestamp || new Date().toISOString(),
-              };
-            }
-            return vehicle;
-          }),
-        );
+  const handleVehiclePositionUpdate = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
       }
-      return;
-    }
+      applyVehiclePositionUpdate(
+        payload as {
+          vehicle_id?: string;
+          vehicle_immatriculation?: string;
+          latitude?: number;
+          longitude?: number;
+          timestamp?: string | null;
+        },
+      );
+    },
+    [applyVehiclePositionUpdate],
+  );
 
-    // Gestion des snapshots de véhicules
-    if (Array.isArray(data.vehicles)) {
-      const mapped = data.vehicles
-        .map((item) => mapVehicleToUi(item as ApiVehicleDetail))
-        .filter((item): item is Vehicle => Boolean(item));
-      setVehicles(mapped);
-      return;
-    }
+  useLiveEvent("new_incident", handleNewIncident);
+  useLiveEvent("vehicle_assignment_proposal", handleAssignmentProposal);
+  useLiveEvent("vehicle_position_update", handleVehiclePositionUpdate);
 
-    // Gestion d'une mise à jour de véhicule unique
-    setVehicles((prev) => upsertById(prev, data as Vehicle, getVehicleId));
+  useEffect(() => {
+    return () => {
+      if (incidentFlushRef.current) {
+        clearTimeout(incidentFlushRef.current);
+      }
+      if (vehicleFlushRef.current) {
+        clearTimeout(vehicleFlushRef.current);
+      }
+    };
   }, []);
-
-  useLiveEventList(incidentEvents, handleIncidentEvent);
-  useLiveEventList(vehicleEvents, handleVehicleEvent);
 
   useEffect(() => {
     let isActive = true;
@@ -210,7 +248,7 @@ export function HomeScreen() {
       try {
         const data = await fetchIncidents();
         if (isActive) {
-          setIncidents(data.filter(isActiveIncident));
+          applyIncidentSnapshot(data);
         }
       } catch (error) {
         if (isActive) {
@@ -228,7 +266,7 @@ export function HomeScreen() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [applyIncidentSnapshot]);
 
   useEffect(() => {
     let isActive = true;
@@ -236,7 +274,7 @@ export function HomeScreen() {
       try {
         const data = await fetchVehicles();
         if (isActive) {
-          setVehicles(data);
+          applyVehicleSnapshot(data);
         }
       } catch (error) {
         if (isActive) {
@@ -254,7 +292,7 @@ export function HomeScreen() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [applyVehicleSnapshot]);
 
   useEffect(() => {
     if (!mapClickLocation) {
@@ -416,31 +454,6 @@ export function HomeScreen() {
   );
 }
 
-const getIncidentId = (
-  incident: Partial<Incident> & { incident_id?: string },
-) => incident.id ?? incident.incident_id ?? "";
-
-const getVehicleId = (vehicle: Partial<Vehicle> & { vehicle_id?: string }) =>
-  vehicle.id ?? vehicle.vehicle_id ?? "";
-
-const upsertById = <T extends object>(
-  items: T[],
-  item: T,
-  getId: (value: T) => string,
-) => {
-  const id = getId(item);
-  if (!id) {
-    return items;
-  }
-  const index = items.findIndex((value) => getId(value) === id);
-  if (index === -1) {
-    return [...items, item];
-  }
-  const next = [...items];
-  next[index] = { ...next[index], ...item };
-  return next;
-};
-
 const toUiIncident = (value: unknown): Incident | null => {
   if (!value || typeof value !== "object") {
     return null;
@@ -458,13 +471,6 @@ const toUiIncident = (value: unknown): Incident | null => {
 };
 
 const isActiveIncident = (incident: Incident) => incident.status !== "resolved";
-
-const mergeIncident = (items: Incident[], incident: Incident) => {
-  if (!isActiveIncident(incident)) {
-    return items.filter((item) => item.id !== incident.id);
-  }
-  return upsertById(items, incident, getIncidentId);
-};
 
 const DEFAULT_CITY = "Lyon";
 const DEFAULT_ZIPCODE = "69000";
