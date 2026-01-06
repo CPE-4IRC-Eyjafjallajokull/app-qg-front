@@ -1,0 +1,23 @@
+# ZAP Scanning Rules Configuration
+# Format: rule_id	IGNORE/WARN/FAIL	description
+
+# Ignore specific rules that may cause false positives for Next.js
+10096	IGNORE	Timestamp Disclosure
+10109	IGNORE	Modern Web Application
+10015	IGNORE	Re-examine Cache-control Directives (Next.js handles this)
+10202	IGNORE	Absence of Anti-CSRF Tokens (Next.js has built-in protection)
+
+# Warn on medium severity issues
+10055	WARN	CSP Scanner (Content Security Policy)
+10038	WARN	HTTP Parameter Pollution
+10063	WARN	Feature Policy Header Not Set
+
+# Fail on high/critical severity issues  
+90011	FAIL	Charset Mismatch
+40012	FAIL	Cross Site Scripting (XSS)
+40014	FAIL	Cross Site Scripting (Persistent)
+40016	FAIL	Cross Site Scripting (Reflected)
+90019	FAIL	Server Side Code Injection
+7	FAIL	Remote OS Command Injection
+90020	FAIL	Remote OS Command Injection
+90033	FAIL	Loosely Scoped Cookie
