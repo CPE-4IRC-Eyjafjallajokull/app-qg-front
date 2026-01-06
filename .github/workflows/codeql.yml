@@ -1,44 +1,29 @@
-# ==============================================================================
-# CodeQL Security Analysis - Next.js Application
-# ==============================================================================
-# Analyse SAST (Static Application Security Testing) pour détecter :
-# - Vulnérabilités de sécurité (XSS, injections, etc.)
-# - Problèmes de qualité de code
-# - Patterns dangereux en JavaScript/TypeScript
-#
-# Résultats publiés dans : GitHub Security > Code scanning alerts
-# ==============================================================================
-
 name: CodeQL SAST
 
 on:
-  # Déclenche l'analyse à chaque push sur les branches principales
   push:
     branches: [main, develop]
     paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
-      - '**.jsx'
-      - 'package.json'
-      - 'package-lock.json'
-  
-  # Déclenche l'analyse sur les pull requests
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
+      - "**.jsx"
+      - "package.json"
+      - "package-lock.json"
+
   pull_request:
     branches: [main, develop]
     paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
-      - '**.jsx'
-      - 'package.json'
-      - 'package-lock.json'
-  
-  # Analyse planifiée hebdomadaire (chaque mercredi à 5h UTC)
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
+      - "**.jsx"
+      - "package.json"
+      - "package-lock.json"
+
   schedule:
-    - cron: '0 5 * * 3'
-  
-  # Permet le déclenchement manuel depuis l'interface GitHub Actions
+    - cron: "0 5 * * 3"
+
   workflow_dispatch:
 
 jobs:
@@ -46,47 +31,32 @@ jobs:
     name: Analyse CodeQL
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
-    # Permissions minimales requises pour CodeQL
+
     permissions:
-      actions: read          # Lecture des métadonnées du workflow
-      contents: read         # Lecture du code source
-      security-events: write # Écriture des alertes dans l'onglet Security
+      actions: read
+      contents: read
+      security-events: write
 
     strategy:
       fail-fast: false
       matrix:
-        # CodeQL supporte 'javascript' pour JS/TS/JSX/TSX
-        language: ['javascript']
+        language: ["javascript"]
 
     steps:
-      # ========================================
-      # 1. Récupération du code source
-      # ========================================
       - name: Checkout du dépôt
         uses: actions/checkout@v4
 
-      # ========================================
-      # 2. Configuration de Node.js
-      # ========================================
       - name: Installation de Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
-      # ========================================
-      # 3. Initialisation de CodeQL
-      # ========================================
       - name: Initialisation de CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          
-          # Queries : security-and-quality pour une analyse complète
           queries: +security-and-quality
-          
-          # Configuration des chemins à analyser/ignorer
           config: |
             paths-ignore:
               - node_modules
@@ -109,36 +79,21 @@ jobs:
               - auth.ts
               - proxy.ts
 
-      # ========================================
-      # 4. Installation des dépendances Next.js
-      # ========================================
       - name: Installation des dépendances npm
         run: npm ci
 
-      # ========================================
-      # 5. Build de l'application Next.js
-      # ========================================
-      # Le build est nécessaire pour que CodeQL analyse le code transpilé
       - name: Build de l'application Next.js
         run: npm run build
         env:
-          # Variables minimales pour permettre le build
           NODE_ENV: production
           NEXT_PUBLIC_APP_VERSION: ci-build
 
-      # ========================================
-      # 6. Exécution de l'analyse CodeQL
-      # ========================================
       - name: Analyse de sécurité CodeQL
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{matrix.language}}"
-          # Upload automatique des résultats SARIF vers GitHub Security
           upload: true
 
-      # ========================================
-      # 7. Sauvegarde des résultats (optionnel)
-      # ========================================
       - name: Archivage des résultats CodeQL
         uses: actions/upload-artifact@v4
         if: always()
