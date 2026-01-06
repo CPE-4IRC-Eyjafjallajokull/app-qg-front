@@ -2,25 +2,11 @@ name: CodeQL SAST
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - "**.ts"
-      - "**.tsx"
-      - "**.js"
-      - "**.jsx"
-      - "package.json"
-      - "package-lock.json"
+    branches: [main]
 
   pull_request:
-    branches: [main, develop]
-    paths:
-      - "**.ts"
-      - "**.tsx"
-      - "**.js"
-      - "**.jsx"
-      - "package.json"
-      - "package-lock.json"
-
+    branches: [main]
+    
   schedule:
     - cron: "0 5 * * 3"
 
