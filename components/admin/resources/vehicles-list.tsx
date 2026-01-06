@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/field-utils";
 import { useReferenceResolver } from "@/hooks/useReferenceResolver";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReferenceSelect } from "@/components/admin/reference-select";
@@ -221,18 +222,40 @@ export function VehiclesList() {
                       refreshKey={referenceRefreshKey}
                       onChange={(value) => handleInputChange(field.key, value)}
                     />
+                  ) : field.type === "boolean" ? (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`vehicles-${field.key}`}
+                        checked={formState[field.key] === "true"}
+                        onCheckedChange={(checked) =>
+                          handleInputChange(field.key, checked ? "true" : "false")
+                        }
+                        disabled={saving}
+                      />
+                      <Label
+                        htmlFor={`vehicles-${field.key}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {formState[field.key] === "true" ? "Oui" : "Non"}
+                      </Label>
+                    </div>
                   ) : (
                     <Input
                       id={`vehicles-${field.key}`}
                       type={getInputType(field.type)}
                       placeholder={
                         field.placeholder ??
-                        (field.type === "boolean" ? "true / false" : undefined)
+                        (field.type === "datetime"
+                          ? "YYYY-MM-DDTHH:MM"
+                          : field.type === "date"
+                            ? "YYYY-MM-DD"
+                            : undefined)
                       }
                       value={formState[field.key] ?? ""}
                       onChange={(event) =>
                         handleInputChange(field.key, event.target.value)
                       }
+                      disabled={saving}
                     />
                   )}
                 </div>

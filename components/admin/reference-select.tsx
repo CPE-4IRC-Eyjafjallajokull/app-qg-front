@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import useSWR from "swr";
 import { adminRequest } from "@/lib/admin.service";
 import { getAdminResourceByKey } from "@/lib/admin/registry";
+import { pickReferenceLabel } from "@/lib/admin/field-utils";
 import type { FieldReference } from "@/lib/admin/types";
 import {
   Select,
@@ -34,38 +35,6 @@ const resolveEndpoint = (reference: FieldReference) => {
   return normalizeEndpoint(reference.endpoint);
 };
 
-const pickLabel = (
-  item: Record<string, unknown>,
-  reference: FieldReference,
-  valueKey: string,
-) => {
-  const explicit = reference.labelKey;
-  if (Array.isArray(explicit)) {
-    const parts = explicit
-      .map((key) => item[key])
-      .filter((value) => value !== null && value !== undefined && value !== "")
-      .map((value) => String(value));
-    if (parts.length > 0) {
-      return parts.join(" - ");
-    }
-  } else if (explicit) {
-    const value = item[explicit];
-    if (value !== null && value !== undefined && value !== "") {
-      return String(value);
-    }
-  }
-
-  const fallbacks = ["label", "name", "title", "code", valueKey];
-  for (const key of fallbacks) {
-    const value = item[key];
-    if (value !== null && value !== undefined && value !== "") {
-      return String(value);
-    }
-  }
-
-  return "";
-};
-
 type ReferenceSelectProps = {
   id: string;
   value: string;
@@ -91,13 +60,13 @@ export function ReferenceSelect({
   const endpoint = resolveEndpoint(reference);
   const swrKey = endpoint
     ? [
-        "reference-options",
-        endpoint,
-        valueKey,
-        reference.labelKey,
-        reference.query,
-        refreshKey,
-      ]
+      "reference-options",
+      endpoint,
+      valueKey,
+      reference.labelKey,
+      reference.query,
+      refreshKey,
+    ]
     : null;
 
   const { data, isLoading, error } = useSWR(
@@ -120,7 +89,7 @@ export function ReferenceSelect({
         if (rawValue === null || rawValue === undefined || rawValue === "") {
           return null;
         }
-        const label = pickLabel(item, reference, valueKey);
+        const label = pickReferenceLabel(item, reference, valueKey);
         return {
           value: String(rawValue),
           label: label || String(rawValue),

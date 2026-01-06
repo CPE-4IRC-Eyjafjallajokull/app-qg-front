@@ -102,7 +102,7 @@ export const interestPointsResources: AdminResource[] = [
       {
         key: "last_update",
         label: "Dernière mise à jour",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
     ],
     updateFields: [
@@ -110,7 +110,7 @@ export const interestPointsResources: AdminResource[] = [
       {
         key: "last_update",
         label: "Dernière mise à jour",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
     ],
     readFields: [

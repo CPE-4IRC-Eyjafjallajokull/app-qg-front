@@ -42,7 +42,6 @@ export type ApiVehicleDetail = {
   consumable_stocks: unknown[];
   active_assignment?: {
     vehicle_assignment_id: string;
-    intervention_id: string;
     incident_phase_id?: string | null;
     assigned_at: string;
     assigned_by_operator_id?: string | null;
@@ -109,9 +108,9 @@ export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
   const vehicleTypeCode = vehicle.vehicle_type.code.toUpperCase();
   const vehicleType: Vehicle["type"] =
     vehicleTypeCode === "VSAV" ||
-    vehicleTypeCode === "FPT" ||
-    vehicleTypeCode === "EPA" ||
-    vehicleTypeCode === "VTU"
+      vehicleTypeCode === "FPT" ||
+      vehicleTypeCode === "EPA" ||
+      vehicleTypeCode === "VTU"
       ? vehicleTypeCode
       : "VTU";
 

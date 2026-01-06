@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-export type FieldType = "text" | "number" | "integer" | "boolean";
+export type FieldType = "text" | "number" | "integer" | "boolean" | "date" | "datetime";
 
 export type FieldReference = {
   resourceKey?: string;

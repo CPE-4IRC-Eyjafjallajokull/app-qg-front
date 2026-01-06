@@ -19,6 +19,7 @@ import {
   type FormState,
 } from "@/lib/admin/field-utils";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ReferenceSelect } from "@/components/admin/reference-select";
@@ -368,20 +369,40 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                             handleInputChange(field.key, value)
                           }
                         />
+                      ) : field.type === "boolean" ? (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`vehicle-${field.key}`}
+                            checked={formState[field.key] === "true"}
+                            onCheckedChange={(checked) =>
+                              handleInputChange(field.key, checked ? "true" : "false")
+                            }
+                            disabled={saving}
+                          />
+                          <Label
+                            htmlFor={`vehicle-${field.key}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {formState[field.key] === "true" ? "Oui" : "Non"}
+                          </Label>
+                        </div>
                       ) : (
                         <Input
                           id={`vehicle-${field.key}`}
                           type={getInputType(field.type)}
                           placeholder={
                             field.placeholder ??
-                            (field.type === "boolean"
-                              ? "true / false"
-                              : undefined)
+                            (field.type === "datetime"
+                              ? "YYYY-MM-DDTHH:MM"
+                              : field.type === "date"
+                                ? "YYYY-MM-DD"
+                                : undefined)
                           }
                           value={formState[field.key] ?? ""}
                           onChange={(event) =>
                             handleInputChange(field.key, event.target.value)
                           }
+                          disabled={saving}
                         />
                       )}
                     </div>
@@ -471,9 +492,11 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                   <TableRow>
                     {[
                       "vehicle_assignment_id",
-                      "intervention_id",
                       "incident_phase_id",
                       "assigned_at",
+                      "assigned_by_operator_id",
+                      "validated_at",
+                      "validated_by_operator_id",
                       "unassigned_at",
                     ].map((field) => (
                       <TableHead key={field}>{toLabel(field)}</TableHead>
@@ -502,12 +525,18 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                           {displayValue(item.vehicle_assignment_id)}
                         </TableCell>
                         <TableCell>
-                          {displayValue(item.intervention_id)}
-                        </TableCell>
-                        <TableCell>
                           {displayValue(item.incident_phase_id)}
                         </TableCell>
                         <TableCell>{displayValue(item.assigned_at)}</TableCell>
+                        <TableCell>
+                          {displayValue(item.assigned_by_operator_id)}
+                        </TableCell>
+                        <TableCell>
+                          {displayValue(item.validated_at)}
+                        </TableCell>
+                        <TableCell>
+                          {displayValue(item.validated_by_operator_id)}
+                        </TableCell>
                         <TableCell>
                           {displayValue(item.unassigned_at)}
                         </TableCell>

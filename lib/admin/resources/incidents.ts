@@ -38,7 +38,7 @@ export const incidentsResources: AdminResource[] = [
       {
         key: "ended_at",
         label: "Termine le",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
     ],
     readFields: [
@@ -88,12 +88,12 @@ export const incidentsResources: AdminResource[] = [
       {
         key: "started_at",
         label: "Debut",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
       {
         key: "ended_at",
         label: "Fin",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
     ],
     readFields: [

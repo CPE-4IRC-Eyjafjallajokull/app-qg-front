@@ -74,7 +74,7 @@ export const casualtiesResources: AdminResource[] = [
       {
         key: "reported_at",
         label: "Reporte le",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
       { key: "notes", label: "Notes" },
     ],
@@ -113,19 +113,19 @@ export const casualtiesResources: AdminResource[] = [
         reference: {
           resourceKey: "vehicle-assignments",
           valueKey: "vehicle_assignment_id",
-          labelKey: ["vehicle_id", "intervention_id"],
+          labelKey: ["vehicle_id", "incident_phase_id"],
           placeholder: "Selectionner une affectation",
         },
       },
       {
         key: "picked_up_at",
         label: "Pris en charge le",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
       {
         key: "dropped_off_at",
         label: "Depose le",
-        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
       },
       {
         key: "picked_up_latitude",

@@ -17,13 +17,6 @@ export const adminCategories: AdminCategory[] = [
     icon: AlertTriangle,
   },
   {
-    key: "interventions",
-    label: "Interventions",
-    description: "Suivi des interventions.",
-    prefix: "/interventions",
-    icon: LifeBuoy,
-  },
-  {
     key: "casualties",
     label: "Victimes",
     description: "Gestion des victimes et transports.",

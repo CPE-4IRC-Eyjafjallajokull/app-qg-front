@@ -7,7 +7,6 @@ import type {
 import { casualtiesResources } from "@/lib/admin/resources/casualties";
 import { incidentsResources } from "@/lib/admin/resources/incidents";
 import { interestPointsResources } from "@/lib/admin/resources/interest-points";
-import { interventionsResources } from "@/lib/admin/resources/interventions";
 import { operatorsResources } from "@/lib/admin/resources/operators";
 import { vehiclesResources } from "@/lib/admin/resources/vehicles";
 
@@ -47,7 +46,6 @@ const withAdminPath = (resource: AdminResource): AdminResource => {
 
 export const adminResources: AdminResource[] = [
   ...incidentsResources.map(withCategoryPrefix).map(withAdminPath),
-  ...interventionsResources.map(withCategoryPrefix).map(withAdminPath),
   ...casualtiesResources.map(withCategoryPrefix).map(withAdminPath),
   ...vehiclesResources.map(withCategoryPrefix).map(withAdminPath),
   ...interestPointsResources.map(withCategoryPrefix).map(withAdminPath),

@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { adminRequest } from "@/lib/admin.service";
 import { getAdminResourceByKey } from "@/lib/admin/registry";
 import type { FieldConfig, FieldReference } from "@/lib/admin/types";
-import { displayValue } from "@/lib/admin/field-utils";
+import { displayValue, pickReferenceLabel } from "@/lib/admin/field-utils";
 
 const normalizeEndpoint = (endpoint: string) =>
   endpoint.replace(/^\/+/, "").replace(/\/+$/, "");
@@ -21,38 +21,6 @@ const resolveReferenceEndpoint = (reference: FieldReference) => {
     return "";
   }
   return normalizeEndpoint(reference.endpoint);
-};
-
-const pickReferenceLabel = (
-  item: Record<string, unknown>,
-  reference: FieldReference,
-  valueKey: string,
-) => {
-  const explicit = reference.labelKey;
-  if (Array.isArray(explicit)) {
-    const parts = explicit
-      .map((key) => item[key])
-      .filter((value) => value !== null && value !== undefined && value !== "")
-      .map((value) => String(value));
-    if (parts.length > 0) {
-      return parts.join(" - ");
-    }
-  } else if (explicit) {
-    const value = item[explicit];
-    if (value !== null && value !== undefined && value !== "") {
-      return String(value);
-    }
-  }
-
-  const fallbacks = ["label", "name", "title", "code", valueKey];
-  for (const key of fallbacks) {
-    const value = item[key];
-    if (value !== null && value !== undefined && value !== "") {
-      return String(value);
-    }
-  }
-
-  return "";
 };
 
 type UseReferenceResolverOptions = {
@@ -112,11 +80,11 @@ export function useReferenceResolver({
   const { data: referenceDataMap, isLoading } = useSWR(
     fieldsWithReferences.length > 0
       ? [
-          "reference-resolver",
-          cacheKey,
-          refreshKey,
-          ...fieldsWithReferences.map((f) => `${f.fieldKey}:${f.endpoint}`),
-        ]
+        "reference-resolver",
+        cacheKey,
+        refreshKey,
+        ...fieldsWithReferences.map((f) => `${f.fieldKey}:${f.endpoint}`),
+      ]
       : null,
     async () => {
       const results = await Promise.all(
