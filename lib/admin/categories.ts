@@ -1,10 +1,4 @@
-import {
-  AlertTriangle,
-  HeartPulse,
-  MapPin,
-  Truck,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, HeartPulse, MapPin, Truck, Users } from "lucide-react";
 import type { AdminCategory } from "@/lib/admin/types";
 
 export const adminCategories: AdminCategory[] = [
