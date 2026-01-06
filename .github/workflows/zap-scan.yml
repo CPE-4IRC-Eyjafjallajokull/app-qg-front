@@ -107,7 +107,6 @@ jobs:
           cmd_options: "-a -j -l WARN"
           issue_title: "ZAP Baseline Scan - Résultats de sécurité"
           fail_action: false
-          artifact_name: "zap-scan-artifact"
 
       - name: OWASP ZAP - Full Scan
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -118,7 +117,6 @@ jobs:
           cmd_options: "-a -j -l WARN"
           issue_title: "ZAP Full Scan - Résultats de sécurité"
           fail_action: false
-          artifact_name: "" # ✅ FIX UNIQUE
 
       - name: Sauvegarde des rapports ZAP
         uses: actions/upload-artifact@v4
