@@ -67,25 +67,24 @@ export function IncidentMarkers({ incidents }: IncidentMarkersProps) {
             markerClassName={config.markerClassName}
             icon={<AlertTriangle className="h-4 w-4" />}
           >
-            <div className="flex items-start gap-3 p-3">
+            <div className="w-72 overflow-hidden rounded-lg">
+              {/* Header avec sévérité */}
               <div
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/70",
+                  "flex items-center gap-2 px-3 py-2",
                   config.markerClassName,
                 )}
               >
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 space-y-1">
-                <p className="truncate text-sm font-semibold text-slate-900">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="truncate text-sm font-semibold">
                   {incident.title}
-                </p>
-                {incident.description && (
-                  <p className="line-clamp-2 text-xs text-slate-600">
-                    {incident.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                </span>
+              </div>
+
+              {/* Contenu */}
+              <div className="space-y-3 bg-white p-3">
+                {/* Badges statut et sévérité */}
+                <div className="flex items-center gap-2">
                   <Badge className={cn("text-xs", config.badgeClassName)}>
                     {config.label}
                   </Badge>
@@ -96,16 +95,29 @@ export function IncidentMarkers({ incidents }: IncidentMarkersProps) {
                     {statusLabels[incident.status]}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-3 pt-1 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {formatDate(incident.reportedAt)}
-                  </span>
-                  {incident.sector && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {incident.sector}
-                    </span>
+
+                {/* Description */}
+                {incident.description && (
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    {incident.description}
+                  </p>
+                )}
+
+                {/* Métadonnées */}
+                <div className="space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span>Signalé le {formatDate(incident.reportedAt)}</span>
+                  </div>
+                  {incident.phases.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span>
+                        {incident.phases.length} phase
+                        {incident.phases.length > 1 ? "s" : ""} :{" "}
+                        {incident.phases.join(", ")}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

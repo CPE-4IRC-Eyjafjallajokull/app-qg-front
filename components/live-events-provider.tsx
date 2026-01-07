@@ -26,12 +26,12 @@ const LiveEventsContext = createContext<SSEContextValue | null>(null);
 
 const normalizeEvent = (event: MessageEvent): SSEEvent => {
   const payload = JSON.parse(event.data);
-  const eventName = payload.event || event.type || "message";
+  const eventName = payload.event || "unknown_event";
   return {
     ...payload,
     event: eventName,
     timestamp: payload.timestamp || new Date().toISOString(),
-    data: payload.data ?? payload,
+    data: payload.data || {},
   };
 };
 
@@ -123,7 +123,7 @@ export function LiveEventsProvider({
       return;
     }
 
-    const eventSource = new EventSource("/api/events");
+    const eventSource = new EventSource("/api/live");
     const registeredEvents = registeredEventsRef.current;
     eventSourceRef.current = eventSource;
     registeredEvents.clear();

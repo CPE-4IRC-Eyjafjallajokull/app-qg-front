@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const target = `${serverEnv.API_URL}/events`;
+  const target = `${serverEnv.API_URL}/qg/live`;
 
   try {
     const upstream = await fetch(target, {

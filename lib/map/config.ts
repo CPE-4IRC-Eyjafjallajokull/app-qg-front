@@ -8,7 +8,7 @@ export const LYON_CENTER = {
 };
 
 export const MAP_DEFAULT_ZOOM = 11.8;
-export const MAP_MIN_ZOOM = 9;
+export const MAP_MIN_ZOOM = 6;
 export const MAP_MAX_ZOOM = 19;
 
 export const LYON_BOUNDS: [[number, number], [number, number]] = [

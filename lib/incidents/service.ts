@@ -41,6 +41,18 @@ export type ApiIncidentRead = {
   longitude?: number | null;
   description?: string | null;
   ended_at?: string | null;
+  phases: ApiIncidentPhaseRead[];
+};
+
+export type ApiIncidentPhaseRead = {
+  incident_phase_id: string;
+  phase_type: {
+    code: string;
+    label?: string | null;
+  };
+  priority: number;
+  started_at: string;
+  ended_at?: string | null;
 };
 
 export async function fetchIncidentPhaseTypes(): Promise<IncidentPhaseType[]> {
@@ -121,6 +133,6 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
       lng: longitude,
     },
     reportedAt: incident.created_at,
-    sector: incident.zipcode ?? undefined,
+    phases: incident.phases.map((phase) => phase.phase_type.code),
   };
 }

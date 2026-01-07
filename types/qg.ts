@@ -14,7 +14,27 @@ export type Incident = {
   status: IncidentStatus;
   location: GeoPoint;
   reportedAt: string;
-  sector?: string;
+  phases: string[];
+};
+
+export type AssignmentProposalItem = {
+  incident_phase_id: string;
+  vehicle_id: string;
+  distance_km: number;
+  estimated_time_min: number;
+  energy_level: number;
+  score: number;
+  rationale?: string | null;
+};
+
+export type AssignmentProposal = {
+  proposal_id: string;
+  incident_id: string;
+  generated_at: string;
+  proposals: AssignmentProposalItem[];
+  missing_by_vehicle_type: Record<string, number>;
+  validated_at?: string | null;
+  rejected_at?: string | null;
 };
 
 export type VehicleStatus = "available" | "busy" | "maintenance";

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { FooterGuard } from "@/components/footer-guard";
 import { LiveEventsProvider } from "@/components/live-events-provider";
+import { ResolverProvider } from "@/components/resolver-provider";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -32,12 +33,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <AuthProvider>
-          <LiveEventsProvider>
-            <div className="flex min-h-screen flex-col">
-              <div className="flex-1">{children}</div>
-              <FooterGuard />
-            </div>
-          </LiveEventsProvider>
+          <ResolverProvider>
+            <LiveEventsProvider>
+              <div className="flex min-h-screen flex-col">
+                <div className="flex-1">{children}</div>
+                <FooterGuard />
+              </div>
+            </LiveEventsProvider>
+          </ResolverProvider>
         </AuthProvider>
         <Toaster />
       </body>

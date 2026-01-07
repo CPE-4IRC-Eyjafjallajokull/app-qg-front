@@ -211,6 +211,8 @@ export const vehiclesResources: AdminResource[] = [
         key: "timestamp",
         label: "Timestamp",
         placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+        required: true,
       },
     ],
     readFields: [
@@ -220,7 +222,16 @@ export const vehiclesResources: AdminResource[] = [
       "longitude",
       "timestamp",
     ],
-    supportsUpdate: false,
+    updateFields: [
+      { key: "latitude", label: "Latitude", type: "number" },
+      { key: "longitude", label: "Longitude", type: "number" },
+      {
+        key: "timestamp",
+        label: "Timestamp",
+        placeholder: "2025-01-01T12:30:00Z",
+        type: "datetime",
+      },
+    ],
     supportsDelete: false,
     icon: MapPinned,
   },

@@ -1,58 +1,38 @@
 "use client";
 
-import type { Incident, Vehicle } from "@/types/qg";
+import { useState } from "react";
+import type { AssignmentProposal, Incident, Vehicle } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveEvents } from "@/components/live-events-provider";
+import { useResolver } from "@/components/resolver-provider";
+import { IncidentCard } from "./cards/incident-card";
+import { VehicleCard } from "./cards/vehicle-card";
+import { AssignmentCard } from "./cards/assignment-card";
 
 type SidePanelProps = {
   incidents: Incident[];
   vehicles: Vehicle[];
+  assignments: AssignmentProposal[];
+  onValidateAssignment?: (assignmentId: string) => void;
+  onRejectAssignment?: (assignmentId: string) => void;
 };
 
-const formatTime = (value: string) =>
-  new Date(value).toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Paris",
-  });
-
-const incidentSeverityTone: Record<Incident["severity"], string> = {
-  critical: "bg-red-600 text-white",
-  high: "bg-amber-500 text-white",
-  medium: "bg-orange-400 text-white",
-  low: "bg-emerald-500 text-white",
-};
-
-const incidentStatusTone: Record<Incident["status"], string> = {
-  new: "border-red-200 text-red-700",
-  assigned: "border-sky-200 text-sky-700",
-  resolved: "border-emerald-200 text-emerald-700",
-};
-
-const vehicleStatusTone: Record<Vehicle["status"], string> = {
-  available: "border-emerald-200 text-emerald-700",
-  busy: "border-slate-300 text-slate-700",
-  maintenance: "border-amber-200 text-amber-700",
-};
-
-const incidentStatusLabel: Record<Incident["status"], string> = {
-  new: "Nouveau",
-  assigned: "Assigne",
-  resolved: "Cloture",
-};
-
-const vehicleStatusLabel: Record<Vehicle["status"], string> = {
-  available: "Disponible",
-  busy: "En mission",
-  maintenance: "Maintenance",
-};
-
-export function SidePanel({ incidents, vehicles }: SidePanelProps) {
+export function SidePanel({
+  incidents,
+  vehicles,
+  assignments,
+  onValidateAssignment,
+  onRejectAssignment,
+}: SidePanelProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { isConnected } = useLiveEvents();
+  const { resolve } = useResolver();
+
   const activeIncidents = incidents.filter((incident) =>
     ["new", "assigned"].includes(incident.status),
   );
@@ -60,139 +40,178 @@ export function SidePanel({ incidents, vehicles }: SidePanelProps) {
     (vehicle) => vehicle.status === "available",
   );
 
-  return (
-    <div className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white/85 backdrop-blur-md shadow-sm">
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-              Flux operationnel
-            </p>
-            <h2 className="text-base font-semibold text-slate-900">
-              Notifications QG
-            </h2>
+  // Version repliée
+  if (isCollapsed) {
+    return (
+      <div className="flex h-full w-14 flex-col items-center rounded-2xl border border-slate-200/80 bg-white/90 py-3 shadow-sm backdrop-blur-md transition-all duration-300">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setIsCollapsed(false)}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="mt-4 flex flex-col items-center gap-3">
+          {/* Indicateur Live */}
+          <div
+            className={cn(
+              "h-2.5 w-2.5 rounded-full",
+              isConnected ? "animate-pulse bg-emerald-500" : "bg-slate-300",
+            )}
+            title={isConnected ? "Connecté" : "Hors ligne"}
+          />
+
+          {/* Compteurs */}
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-xs font-semibold text-red-700"
+              title={`${activeIncidents.length} incident(s) actif(s)`}
+            >
+              {activeIncidents.length}
+            </div>
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-700"
+              title={`${availableVehicles.length} véhicule(s) disponible(s)`}
+            >
+              {availableVehicles.length}
+            </div>
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-xs font-semibold text-blue-700"
+              title={`${assignments.length} Assignment(s)`}
+            >
+              {assignments.length}
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-80 flex-col rounded-2xl border border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-md transition-all duration-300 lg:w-96">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200/70 px-4 py-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+            Flux opérationnel
+          </p>
+          <h2 className="text-base font-semibold text-slate-900">
+            Centre de commande
+          </h2>
+        </div>
+        <div className="flex items-center gap-2">
           <Badge
             className={cn(
-              "transition-none",
+              "gap-1.5 transition-colors",
               isConnected
                 ? "bg-emerald-600 text-white"
-                : "bg-slate-200 text-slate-700",
+                : "bg-slate-200 text-slate-600",
             )}
           >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                isConnected ? "animate-pulse bg-emerald-300" : "bg-slate-400",
+              )}
+            />
             {isConnected ? "Live" : "Hors ligne"}
           </Badge>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setIsCollapsed(true)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-
-        <Tabs
-          defaultValue="incidents"
-          className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-3"
-        >
-          <TabsList className="grid w-full grid-cols-2 rounded-lg border border-slate-200/70 bg-slate-100 p-1">
-            <TabsTrigger value="incidents" className="transition-none">
-              Incidents ({activeIncidents.length})
-            </TabsTrigger>
-            <TabsTrigger value="fleet" className="transition-none">
-              Flotte ({availableVehicles.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="incidents" className="min-h-0 flex-1">
-            <ScrollArea className="h-full pr-3">
-              <div className="space-y-3 px-2 pb-2 pt-1">
-                {incidents.map((incident) => (
-                  <div
-                    key={incident.id}
-                    className="rounded-xl border border-slate-200/70 bg-white p-3 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-slate-700" />
-                          <p className="text-sm font-semibold text-slate-900">
-                            {incident.title}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-600">
-                          {incident.description}
-                        </p>
-                      </div>
-                      <Badge
-                        className={incidentSeverityTone[incident.severity]}
-                      >
-                        {incident.severity.toUpperCase()}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-                      <span>
-                        {incident.id}
-                        {incident.sector ? ` • ${incident.sector}` : ""}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "border",
-                            incidentStatusTone[incident.status],
-                          )}
-                        >
-                          {incidentStatusLabel[incident.status]}
-                        </Badge>
-                        <span>{formatTime(incident.reportedAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="fleet" className="min-h-0 flex-1">
-            <ScrollArea className="h-full pr-3">
-              <div className="space-y-3 px-2 pb-2 pt-1">
-                {vehicles.map((vehicle) => (
-                  <div
-                    key={vehicle.id}
-                    className="rounded-xl border border-slate-200/70 bg-white p-3 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Truck className="h-4 w-4 text-slate-700" />
-                          <p className="text-sm font-semibold text-slate-900">
-                            {vehicle.callSign}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-600">
-                          {vehicle.type} · Equipage {vehicle.crew}
-                        </p>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "border",
-                          vehicleStatusTone[vehicle.status],
-                        )}
-                      >
-                        {vehicleStatusLabel[vehicle.status]}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-                      <span>
-                        {vehicle.station ? `${vehicle.station} • ` : ""}
-                        {vehicle.id}
-                      </span>
-                      <span>{formatTime(vehicle.updatedAt)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
       </div>
+
+      {/* Tabs */}
+      <Tabs
+        defaultValue="incidents"
+        className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2"
+      >
+        <TabsList className="grid w-full grid-cols-3 rounded-lg border border-slate-200/70 bg-slate-100/80 p-1">
+          <TabsTrigger
+            value="incidents"
+            className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Incidents ({activeIncidents.length})
+          </TabsTrigger>
+          <TabsTrigger
+            value="fleet"
+            className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Flotte ({availableVehicles.length})
+          </TabsTrigger>
+          <TabsTrigger
+            value="assignments"
+            className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm"
+          >
+            Affect. ({assignments.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Incidents */}
+        <TabsContent value="incidents" className="mt-2 min-h-0 flex-1">
+          <ScrollArea className="h-full pr-1">
+            <div className="space-y-1.5 pb-1">
+              {incidents.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  Aucun incident signalé
+                </p>
+              ) : (
+                incidents.map((incident) => (
+                  <IncidentCard key={incident.id} incident={incident} />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Flotte */}
+        <TabsContent value="fleet" className="mt-2 min-h-0 flex-1">
+          <ScrollArea className="h-full pr-1">
+            <div className="space-y-1.5 pb-1">
+              {vehicles.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  Aucun véhicule disponible
+                </p>
+              ) : (
+                vehicles.map((vehicle) => (
+                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        {/* Assignments */}
+        <TabsContent value="assignments" className="mt-2 min-h-0 flex-1">
+          <ScrollArea className="h-full pr-1">
+            <div className="space-y-1.5 pb-1">
+              {assignments.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  Aucune Assignment en attente
+                </p>
+              ) : (
+                assignments.map((assignment) => (
+                  <AssignmentCard
+                    key={`${assignment.proposal_id}-${assignment.generated_at}`}
+                    assignment={assignment}
+                    resolve={resolve}
+                    onValidate={onValidateAssignment}
+                    onReject={onRejectAssignment}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
