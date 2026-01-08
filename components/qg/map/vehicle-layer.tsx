@@ -3,6 +3,7 @@ import { Layer, Source, useMap } from "react-map-gl/maplibre";
 import type { ExpressionSpecification, MapMouseEvent } from "maplibre-gl";
 import type { Vehicle } from "@/types/qg";
 import { VehiclePopup } from "@/components/qg/map/vehicle-popup";
+import { useInterpolatedVehicles } from "@/hooks/useInterpolatedVehicles";
 
 export const VEHICLE_SOURCE_ID = "vehicles-source";
 export const VEHICLE_LAYER_ID = "vehicles-layer";
@@ -54,6 +55,7 @@ const vehicleStrokeExpression: ExpressionSpecification = [
 export function VehicleLayer({ vehicles }: VehicleLayerProps) {
   const { current: map } = useMap();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const interpolatedVehicles = useInterpolatedVehicles(vehicles);
 
   const vehiclesById = useMemo(
     () => new Map(vehicles.map((vehicle) => [vehicle.id, vehicle])),
@@ -63,7 +65,7 @@ export function VehicleLayer({ vehicles }: VehicleLayerProps) {
   const geojson = useMemo(
     () => ({
       type: "FeatureCollection",
-      features: vehicles.map((vehicle) => ({
+      features: interpolatedVehicles.map((vehicle) => ({
         type: "Feature",
         geometry: {
           type: "Point",
@@ -75,7 +77,7 @@ export function VehicleLayer({ vehicles }: VehicleLayerProps) {
         },
       })),
     }),
-    [vehicles],
+    [interpolatedVehicles],
   );
 
   useEffect(() => {
