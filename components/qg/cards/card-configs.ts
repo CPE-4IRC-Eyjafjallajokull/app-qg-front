@@ -56,13 +56,29 @@ export const vehicleStatusConfig: Record<
     label: "Disponible",
     className: "bg-emerald-100 text-emerald-700 border-emerald-200",
   },
-  busy: {
-    label: "En mission",
-    className: "bg-slate-100 text-slate-700 border-slate-200",
+  engaged: {
+    label: "Engagé",
+    className: "bg-blue-100 text-blue-700 border-blue-200",
   },
-  maintenance: {
-    label: "Maintenance",
-    className: "bg-amber-100 text-amber-700 border-amber-200",
+  out_of_service: {
+    label: "Hors service",
+    className: "bg-red-100 text-red-700 border-red-200",
+  },
+  unavailable: {
+    label: "Indisponible",
+    className: "bg-slate-100 text-slate-600 border-slate-200",
+  },
+  returning: {
+    label: "Retour",
+    className: "bg-violet-100 text-violet-700 border-violet-200",
+  },
+  on_intervention: {
+    label: "Sur intervention",
+    className: "bg-orange-100 text-orange-700 border-orange-200",
+  },
+  transport: {
+    label: "Transport",
+    className: "bg-sky-100 text-sky-700 border-sky-200",
   },
 };
 

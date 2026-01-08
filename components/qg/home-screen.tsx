@@ -24,7 +24,7 @@ import {
   type IncidentPhaseType,
   type IncidentDeclarationLocation,
 } from "@/lib/incidents/service";
-import { fetchVehicles } from "@/lib/vehicles/service";
+import { fetchVehicles, mapStatusLabelToKey } from "@/lib/vehicles/service";
 import {
   fetchAssignmentProposals,
   isPendingAssignmentProposal,
@@ -128,6 +128,34 @@ export function HomeScreen() {
     [scheduleVehicleFlush],
   );
 
+  const findVehicleInStore = useCallback(
+    (vehicleId?: string, immatriculation?: string): Vehicle | undefined => {
+      const store = vehicleStoreRef.current;
+      if (vehicleId) {
+        const found = store.get(vehicleId);
+        if (found) return found;
+      }
+      if (immatriculation) {
+        return Array.from(store.values()).find(
+          (v) => v.callSign === immatriculation,
+        );
+      }
+      return undefined;
+    },
+    [],
+  );
+
+  const applyVehicleUpdate = useCallback(
+    (vehicleId: string, updates: Partial<Vehicle>) => {
+      const store = vehicleStoreRef.current;
+      const current = store.get(vehicleId);
+      if (!current) return;
+      store.set(vehicleId, { ...current, ...updates });
+      scheduleVehicleFlush();
+    },
+    [scheduleVehicleFlush],
+  );
+
   const applyVehiclePositionUpdate = useCallback(
     (update: {
       vehicle_id?: string;
@@ -144,14 +172,10 @@ export function HomeScreen() {
       if (Number.isNaN(lat) || Number.isNaN(lng)) {
         return;
       }
-      const store = vehicleStoreRef.current;
-      const id = update.vehicle_id ?? "";
-      let current = id ? store.get(id) : undefined;
-      if (!current && update.vehicle_immatriculation) {
-        current = Array.from(store.values()).find(
-          (vehicle) => vehicle.callSign === update.vehicle_immatriculation,
-        );
-      }
+      const current = findVehicleInStore(
+        update.vehicle_id,
+        update.vehicle_immatriculation,
+      );
       if (!current) {
         return;
       }
@@ -163,14 +187,42 @@ export function HomeScreen() {
       ) {
         return;
       }
-      store.set(current.id, {
-        ...current,
+      applyVehicleUpdate(current.id, {
         location: { lat, lng },
         updatedAt,
       });
-      scheduleVehicleFlush();
     },
-    [scheduleVehicleFlush],
+    [findVehicleInStore, applyVehicleUpdate],
+  );
+
+  const applyVehicleStatusUpdate = useCallback(
+    (update: {
+      vehicle_id?: string;
+      vehicle_immatriculation?: string;
+      status_label?: string;
+      timestamp?: string | null;
+    }) => {
+      if (!update.status_label) {
+        return;
+      }
+      const current = findVehicleInStore(
+        update.vehicle_id,
+        update.vehicle_immatriculation,
+      );
+      if (!current) {
+        return;
+      }
+      const status = mapStatusLabelToKey(update.status_label);
+      const updatedAt = update.timestamp || new Date().toISOString();
+      if (current.status === status && current.updatedAt === updatedAt) {
+        return;
+      }
+      applyVehicleUpdate(current.id, {
+        status,
+        updatedAt,
+      });
+    },
+    [findVehicleInStore, applyVehicleUpdate],
   );
 
   const flushAssignments = useCallback(() => {
@@ -292,6 +344,24 @@ export function HomeScreen() {
     [applyVehiclePositionUpdate],
   );
 
+  const handleVehicleStatusUpdate = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+      applyVehicleStatusUpdate(
+        payload as {
+          vehicle_id?: string;
+          vehicle_immatriculation?: string;
+          status_label?: string;
+          timestamp?: string | null;
+        },
+      );
+    },
+    [applyVehicleStatusUpdate],
+  );
+
   const handleValidateAssignment = useCallback(
     async (proposalId: string) => {
       if (!proposalId) {
@@ -337,6 +407,7 @@ export function HomeScreen() {
   useLiveEvent("new_incident", handleNewIncident);
   useLiveEvent("vehicle_assignment_proposal", handleAssignmentProposal);
   useLiveEvent("vehicle_position_update", handleVehiclePositionUpdate);
+  useLiveEvent("vehicle_status_update", handleVehicleStatusUpdate);
 
   useEffect(() => {
     return () => {

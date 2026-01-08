@@ -1,4 +1,4 @@
-import type { Incident } from "@/types/qg";
+import type { Incident, IncidentSeverity } from "@/types/qg";
 import { fetchWithAuth } from "@/lib/auth-redirect";
 import { getErrorMessage, parseResponseBody } from "@/lib/api-response";
 import { adminRequest } from "@/lib/admin.service";
@@ -122,11 +122,19 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
   const title =
     incident.address?.trim() || incident.city?.trim() || "Incident declare";
 
+  // calculate severity based on priority of the first phase (piority 0 is highest, 1 is medium, 2 is low and more than 2 is very low)
+  const severity: IncidentSeverity =
+    incident.phases.length > 0
+      ? (["critical", "high", "medium", "low"] as const)[
+          Math.min(incident.phases[0].priority, 3)
+        ]
+      : "low";
+
   return {
     id: incident.incident_id,
     title,
     description: incident.description ?? "",
-    severity: "medium",
+    severity: severity,
     status: incident.ended_at ? "resolved" : "new",
     location: {
       lat: latitude,

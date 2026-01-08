@@ -28,9 +28,9 @@ export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
       >
         <div className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-slate-200/80 bg-white/95 shadow-sm" />
         <div className="relative rounded-2xl border border-slate-200/80 bg-white/95 shadow-lg backdrop-blur">
-          <div className="flex items-center justify-between px-3 pt-3">
+          <div className="flex items-center justify-between px-3 py-1">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-              Vehicule
+              Véhicule
             </p>
             <Button
               variant="ghost"

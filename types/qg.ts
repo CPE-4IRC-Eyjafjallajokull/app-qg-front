@@ -37,7 +37,14 @@ export type AssignmentProposal = {
   rejected_at?: string | null;
 };
 
-export type VehicleStatus = "available" | "busy" | "maintenance";
+export type VehicleStatus =
+  | "available"
+  | "engaged"
+  | "out_of_service"
+  | "unavailable"
+  | "returning"
+  | "on_intervention"
+  | "transport";
 export type VehicleType = "VSAV" | "FPT" | "EPA" | "VTU";
 
 export type Vehicle = {

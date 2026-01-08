@@ -15,24 +15,40 @@ const vehicleColorExpression: ExpressionSpecification = [
   "match",
   ["get", "status"],
   "available",
-  "#059669",
-  "busy",
-  "#0f172a",
-  "maintenance",
-  "#fbbf24",
-  "#0f172a",
+  "#059669", // emerald-600
+  "engaged",
+  "#2563eb", // blue-600
+  "out_of_service",
+  "#dc2626", // red-600
+  "unavailable",
+  "#64748b", // slate-500
+  "returning",
+  "#7c3aed", // violet-600
+  "on_intervention",
+  "#f97316", // orange-500
+  "transport",
+  "#0284c7", // sky-600
+  "#64748b", // default: slate-500
 ];
 
 const vehicleStrokeExpression: ExpressionSpecification = [
   "match",
   ["get", "status"],
   "available",
-  "#34d399",
-  "busy",
-  "#475569",
-  "maintenance",
-  "#fcd34d",
-  "#475569",
+  "#34d399", // emerald-400
+  "engaged",
+  "#60a5fa", // blue-400
+  "out_of_service",
+  "#f87171", // red-400
+  "unavailable",
+  "#94a3b8", // slate-400
+  "returning",
+  "#a78bfa", // violet-400
+  "on_intervention",
+  "#fb923c", // orange-400
+  "transport",
+  "#38bdf8", // sky-400
+  "#94a3b8", // default: slate-400
 ];
 
 export function VehicleLayer({ vehicles }: VehicleLayerProps) {

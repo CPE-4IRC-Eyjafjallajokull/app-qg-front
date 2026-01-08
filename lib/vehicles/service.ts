@@ -78,6 +78,24 @@ export async function fetchVehicles(): Promise<Vehicle[]> {
     .filter((item): item is Vehicle => Boolean(item));
 }
 
+const statusLabelMap: Record<string, Vehicle["status"]> = {
+  disponible: "available",
+  engagé: "engaged",
+  "hors service": "out_of_service",
+  indisponible: "unavailable",
+  retour: "returning",
+  "sur intervention": "on_intervention",
+  transport: "transport",
+};
+
+export function mapStatusLabelToKey(
+  label: string | null | undefined,
+): Vehicle["status"] {
+  if (!label) return "unavailable";
+  const normalized = label.toLowerCase().trim();
+  return statusLabelMap[normalized] ?? "unavailable";
+}
+
 export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
   // Ne pas afficher les véhicules sans position
   if (
@@ -106,12 +124,7 @@ export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
       : "VTU";
 
   // Mapping du statut
-  const statusLabel = vehicle.status?.label?.toLowerCase() || "";
-  const status: Vehicle["status"] = statusLabel.includes("disponible")
-    ? "available"
-    : statusLabel.includes("maintenance")
-      ? "maintenance"
-      : "busy";
+  const status = mapStatusLabelToKey(vehicle.status?.label);
 
   return {
     id: vehicle.vehicle_id,
