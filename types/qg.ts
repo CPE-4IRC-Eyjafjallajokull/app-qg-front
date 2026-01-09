@@ -45,7 +45,23 @@ export type VehicleStatus =
   | "returning"
   | "on_intervention"
   | "transport";
-export type VehicleType = "VSAV" | "FPT" | "EPA" | "VTU";
+export type VehicleType =
+  | "VSAV"
+  | "FPT"
+  | "EPA"
+  | "VTU"
+  | "BEA"
+  | "CCF"
+  | "CCGC"
+  | "FPTSR"
+  | "PC_Mobile"
+  | "VAR"
+  | "VIRT"
+  | "VLCG"
+  | "VLM"
+  | "VLR"
+  | "VPI"
+  | "VSR";
 
 export type Vehicle = {
   id: string;

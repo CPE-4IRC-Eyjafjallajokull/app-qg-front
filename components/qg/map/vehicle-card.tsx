@@ -1,6 +1,8 @@
-import { Clock, MapPin, Truck, Users } from "lucide-react";
+import { Clock, MapPin, Users } from "lucide-react";
 import type { Vehicle } from "@/types/qg";
 import { cn } from "@/lib/utils";
+import { getVehicleImagePath } from "@/lib/vehicles/images";
+import Image from "next/image";
 
 export const vehicleStatusConfig: Record<
   Vehicle["status"],
@@ -76,6 +78,18 @@ export const vehicleTypeLabels: Record<Vehicle["type"], string> = {
   FPT: "Fourgon Pompe-Tonne",
   EPA: "Échelle Pivotante",
   VTU: "Véhicule Tout Usage",
+  BEA: "Bateau Échelle Autopompe",
+  CCF: "Camion Citerne Feux de Forêt",
+  CCGC: "Camion Citerne Grande Capacité",
+  FPTSR: "Fourgon Pompe Tonne Secours Routier",
+  PC_Mobile: "Poste de Commandement Mobile",
+  VAR: "Véhicule d'Assistance Respiratoire",
+  VIRT: "Véhicule d'Intervention Robotisé Téléopéré",
+  VLCG: "Véhicule de Liaison et de Commandement de Groupe",
+  VLM: "Véhicule Léger Médicalisé",
+  VLR: "Véhicule Léger de Reconnaissance",
+  VPI: "Véhicule de Premier Intervention",
+  VSR: "Véhicule de Secours Routier",
 };
 
 const formatVehicleTime = (dateString: string) => {
@@ -119,7 +133,13 @@ export function VehicleCard({ vehicle, className }: VehicleCardProps) {
             config.bgColor,
           )}
         >
-          <Truck className={cn("h-5 w-5", config.textColor)} />
+          <Image
+            src={getVehicleImagePath(vehicle.type)}
+            alt={vehicle.type}
+            width={24}
+            height={24}
+            className="object-contain"
+          />
         </div>
 
         {/* Content */}

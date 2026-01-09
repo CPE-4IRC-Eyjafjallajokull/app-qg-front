@@ -9,8 +9,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Check, ChevronDown, Fuel, Route, Truck, X } from "lucide-react";
+import { Check, ChevronDown, Fuel, Route, X } from "lucide-react";
 import { formatTime } from "./card-configs";
+import { getVehicleImagePath } from "@/lib/vehicles/images";
+import Image from "next/image";
 
 type AssignmentCardProps = {
   assignment: AssignmentProposal;
@@ -136,6 +138,9 @@ export function AssignmentCard({
                             vehicle?.vehicle_type?.code ||
                             "";
 
+                          const vehicleTypeCode =
+                            vehicle?.vehicle_type?.code || "VTU";
+
                           return (
                             <div
                               key={`${proposal.vehicle_id}-${idx}`}
@@ -146,7 +151,13 @@ export function AssignmentCard({
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex min-w-0 flex-1 items-center gap-1.5">
                                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-100">
-                                      <Truck className="h-3 w-3 text-blue-600" />
+                                      <Image
+                                        src={getVehicleImagePath(vehicleTypeCode as any)}
+                                        alt={vehicleTypeCode}
+                                        width={16}
+                                        height={16}
+                                        className="object-contain"
+                                      />
                                     </div>
                                     <div className="flex min-w-0 flex-1 flex-col">
                                       <span className="truncate text-xs font-semibold text-slate-900">

@@ -7,13 +7,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Clock, Truck, Users, Warehouse } from "lucide-react";
+import { ChevronDown, Clock, Users, Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   vehicleStatusConfig,
   vehicleTypeLabels,
   formatTime,
 } from "./card-configs";
+import { getVehicleImagePath } from "@/lib/vehicles/images";
+import Image from "next/image";
 
 export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const status = vehicleStatusConfig[vehicle.status];
@@ -24,7 +26,13 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         {/* Header */}
         <CollapsibleTrigger className="flex w-full items-center gap-2 p-2.5 text-left">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-            <Truck className="h-3.5 w-3.5 text-slate-600" />
+            <Image
+              src={getVehicleImagePath(vehicle.type)}
+              alt={vehicle.type}
+              width={20}
+              height={20}
+              className="object-contain"
+            />
           </div>
 
           <div className="min-w-0 flex-1 overflow-hidden">

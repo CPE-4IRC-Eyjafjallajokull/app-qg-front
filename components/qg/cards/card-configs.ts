@@ -87,6 +87,18 @@ export const vehicleTypeLabels: Record<string, string> = {
   FPT: "Fourgon Pompe Tonne",
   EPA: "Échelle Pivotante",
   VTU: "Véhicule Tout Usage",
+  BEA: "Bateau Échelle Autopompe",
+  CCF: "Camion Citerne Feux de Forêt",
+  CCGC: "Camion Citerne Grande Capacité",
+  FPTSR: "Fourgon Pompe Tonne Secours Routier",
+  PC_Mobile: "Poste de Commandement Mobile",
+  VAR: "Véhicule d'Assistance Respiratoire",
+  VIRT: "Véhicule d'Intervention Robotisé Téléopéré",
+  VLCG: "Véhicule de Liaison et de Commandement de Groupe",
+  VLM: "Véhicule Léger Médicalisé",
+  VLR: "Véhicule Léger de Reconnaissance",
+  VPI: "Véhicule de Premier Intervention",
+  VSR: "Véhicule de Secours Routier",
 };
 
 export const formatTime = (value: string) =>
