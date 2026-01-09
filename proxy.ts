@@ -2,7 +2,10 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
 const isPublicPath = (pathname: string) =>
-  pathname === "/auth/signin" || pathname.startsWith("/auth/error");
+  pathname === "/auth/signin" ||
+  pathname.startsWith("/auth/error") ||
+  pathname === "/vehicles" ||
+  pathname.startsWith("/vehicles/");
 
 export const proxy = auth((req) => {
   const { nextUrl } = req;
@@ -15,5 +18,5 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|vehicles).*)"],
 };
