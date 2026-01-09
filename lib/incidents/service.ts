@@ -1,4 +1,4 @@
-import type { Incident, IncidentSeverity } from "@/types/qg";
+import type { Incident, IncidentSeverity, IncidentStatus } from "@/types/qg";
 import { fetchWithAuth } from "@/lib/auth-redirect";
 import { getErrorMessage, parseResponseBody } from "@/lib/api-response";
 import { adminRequest } from "@/lib/admin.service";
@@ -53,6 +53,18 @@ export type ApiIncidentPhaseRead = {
   priority: number;
   started_at: string;
   ended_at?: string | null;
+  vehicle_assignments: ApiIncidentVehicleAssignmentRead[];
+};
+
+export type ApiIncidentVehicleAssignmentRead = {
+  vehicle_assignment_id: string;
+  vehicle_id: string;
+  incident_phase_id: string;
+  assigned_at: string;
+  assigned_by_operator_id?: string | null;
+  validated_at?: string | null;
+  validated_by_operator_id?: string | null;
+  unassigned_at?: string | null;
 };
 
 export async function fetchIncidentPhaseTypes(): Promise<IncidentPhaseType[]> {
@@ -130,12 +142,25 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
         ]
       : "low";
 
+  const allPhasesEnded = incident.phases.every((phase) =>
+    Boolean(phase.ended_at),
+  );
+  const hasAssignedVehicles = incident.phases.some(
+    (phase) => phase.vehicle_assignments.length > 0,
+  );
+
+  const incidentStatus: IncidentStatus = allPhasesEnded
+    ? "resolved"
+    : hasAssignedVehicles
+      ? "assigned"
+      : "new";
+
   return {
     id: incident.incident_id,
     title,
     description: incident.description ?? "",
     severity: severity,
-    status: incident.ended_at ? "resolved" : "new",
+    status: incidentStatus,
     location: {
       lat: latitude,
       lng: longitude,
