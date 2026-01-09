@@ -15,6 +15,7 @@ import type { AssignmentProposal, Incident, Vehicle } from "@/types/qg";
 import { useLiveEvent } from "@/hooks/useLiveEvent";
 import type { SSEEvent } from "@/lib/sse/types";
 import { reverseGeocode } from "@/lib/geocoding/service";
+import { MAP_MAX_ZOOM } from "@/lib/map/config";
 import {
   declareIncident,
   fetchIncidents,
@@ -41,6 +42,11 @@ export function HomeScreen() {
   const [mapClickLocation, setMapClickLocation] = useState<{
     latitude: number;
     longitude: number;
+  } | null>(null);
+  const [mapFocusLocation, setMapFocusLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    zoom?: number;
   } | null>(null);
   const [isCreatingInterestPoint, setIsCreatingInterestPoint] = useState(false);
   const [isDeclaringIncident, setIsDeclaringIncident] = useState(false);
@@ -611,6 +617,21 @@ export function HomeScreen() {
     [refresh],
   );
 
+  const handleFocusIncident = useCallback((incident: Incident) => {
+    setMapFocusLocation({
+      latitude: incident.location.lat,
+      longitude: incident.location.lng,
+      zoom: MAP_MAX_ZOOM - 2,
+    });
+  }, []);
+
+  const handleFocusVehicle = useCallback((vehicle: Vehicle) => {
+    setMapFocusLocation({
+      latitude: vehicle.location.lat,
+      longitude: vehicle.location.lng,
+    });
+  }, []);
+
   return (
     <div className="relative h-screen w-screen bg-slate-950">
       <MapView
@@ -619,6 +640,7 @@ export function HomeScreen() {
         interestPoints={interestPoints}
         interestPointKinds={interestPointKinds}
         onMapClick={handleMapClick}
+        focusLocation={mapFocusLocation}
       >
         {mapClickLocation ? (
           <MapClickPopup
@@ -652,6 +674,8 @@ export function HomeScreen() {
             assignments={assignments}
             onValidateAssignment={handleValidateAssignment}
             onRejectAssignment={handleRejectAssignment}
+            onFocusIncident={handleFocusIncident}
+            onFocusVehicle={handleFocusVehicle}
           />
         </div>
 

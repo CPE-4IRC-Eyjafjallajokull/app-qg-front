@@ -20,6 +20,8 @@ type SidePanelProps = {
   assignments: AssignmentProposal[];
   onValidateAssignment?: (assignmentId: string) => void;
   onRejectAssignment?: (assignmentId: string) => void;
+  onFocusIncident?: (incident: Incident) => void;
+  onFocusVehicle?: (vehicle: Vehicle) => void;
 };
 
 export function SidePanel({
@@ -28,6 +30,8 @@ export function SidePanel({
   assignments,
   onValidateAssignment,
   onRejectAssignment,
+  onFocusIncident,
+  onFocusVehicle,
 }: SidePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { isConnected } = useLiveEvents();
@@ -165,7 +169,11 @@ export function SidePanel({
                 </p>
               ) : (
                 incidents.map((incident) => (
-                  <IncidentCard key={incident.id} incident={incident} />
+                  <IncidentCard
+                    key={incident.id}
+                    incident={incident}
+                    onFocus={onFocusIncident}
+                  />
                 ))
               )}
             </div>
@@ -182,7 +190,11 @@ export function SidePanel({
                 </p>
               ) : (
                 vehicles.map((vehicle) => (
-                  <VehicleCard key={vehicle.id} vehicle={vehicle} />
+                  <VehicleCard
+                    key={vehicle.id}
+                    vehicle={vehicle}
+                    onFocus={onFocusVehicle}
+                  />
                 ))
               )}
             </div>

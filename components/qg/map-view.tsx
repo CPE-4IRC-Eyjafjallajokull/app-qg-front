@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import Map, {
+  type MapRef,
   NavigationControl,
   type MapLayerMouseEvent,
 } from "react-map-gl/maplibre";
@@ -32,6 +33,7 @@ type MapViewProps = {
   vehicles: Vehicle[];
   interestPoints?: InterestPoint[];
   interestPointKinds?: InterestPointKind[];
+  focusLocation?: { latitude: number; longitude: number; zoom?: number } | null;
   onMapClick?: (location: { latitude: number; longitude: number }) => void;
   children?: ReactNode;
 };
@@ -41,9 +43,11 @@ export default function MapView({
   vehicles,
   interestPoints = [],
   interestPointKinds = [],
+  focusLocation = null,
   onMapClick,
   children,
 }: MapViewProps) {
+  const mapRef = useRef<MapRef | null>(null);
   const handleMapClick = useCallback(
     (event: MapLayerMouseEvent) => {
       if (
@@ -69,9 +73,32 @@ export default function MapView({
     [onMapClick],
   );
 
+  useEffect(() => {
+    if (!focusLocation) {
+      return;
+    }
+
+    const mapInstance = mapRef.current?.getMap();
+    if (!mapInstance) {
+      return;
+    }
+
+    const targetZoom = Math.min(
+      Math.max(focusLocation.zoom ?? MAP_DEFAULT_ZOOM + 3, MAP_MIN_ZOOM),
+      MAP_MAX_ZOOM,
+    );
+
+    mapInstance.easeTo({
+      center: [focusLocation.longitude, focusLocation.latitude],
+      zoom: targetZoom,
+      duration: 800,
+    });
+  }, [focusLocation]);
+
   return (
     <div className="h-full w-full">
       <Map
+        ref={mapRef}
         mapLib={maplibregl}
         mapStyle={MAP_STYLE_URL}
         initialViewState={{

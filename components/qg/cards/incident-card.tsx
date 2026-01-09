@@ -2,16 +2,23 @@
 
 import type { Incident } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { AlertTriangle, ChevronDown, MapPin } from "lucide-react";
+import { AlertTriangle, ChevronDown, LocateFixed, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { severityConfig, statusConfig, formatDate } from "./card-configs";
 
-export function IncidentCard({ incident }: { incident: Incident }) {
+export function IncidentCard({
+  incident,
+  onFocus,
+}: {
+  incident: Incident;
+  onFocus?: (incident: Incident) => void;
+}) {
   const severity = severityConfig[incident.severity];
   const status = statusConfig[incident.status];
 
@@ -57,7 +64,24 @@ export function IncidentCard({ incident }: { incident: Incident }) {
             </div>
           </div>
 
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-slate-500 hover:text-slate-700"
+              title="Zoomer sur l'incident"
+              aria-label="Zoomer sur l'incident"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onFocus?.(incident);
+              }}
+            >
+              <LocateFixed className="h-3.5 w-3.5" />
+            </Button>
+            <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+          </div>
         </CollapsibleTrigger>
 
         {/* Contenu dépliable */}
