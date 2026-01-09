@@ -368,6 +368,32 @@ export function HomeScreen() {
     [applyVehicleStatusUpdate],
   );
 
+  const handleIncidentStatusUpdate = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+      const data = payload as {
+        incident_id?: unknown;
+        incident_ended?: unknown;
+      };
+      if (typeof data.incident_id !== "string") {
+        return;
+      }
+      const current = incidentStoreRef.current.get(data.incident_id);
+      if (!current) {
+        return;
+      }
+      const incidentEnded = Boolean(data.incident_ended);
+      if (!incidentEnded || current.status === "resolved") {
+        return;
+      }
+      applyIncidentUpdate({ ...current, status: "resolved" });
+    },
+    [applyIncidentUpdate],
+  );
+
   const handleValidateAssignment = useCallback(
     async (proposalId: string) => {
       if (!proposalId) {
@@ -414,6 +440,7 @@ export function HomeScreen() {
   useLiveEvent("vehicle_assignment_proposal", handleAssignmentProposal);
   useLiveEvent("vehicle_position_update", handleVehiclePositionUpdate);
   useLiveEvent("vehicle_status_update", handleVehicleStatusUpdate);
+  useLiveEvent("incident_status_update", handleIncidentStatusUpdate);
 
   useEffect(() => {
     return () => {
