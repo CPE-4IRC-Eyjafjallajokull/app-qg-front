@@ -25,13 +25,13 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
         {/* Header */}
         <CollapsibleTrigger className="flex w-full items-center gap-2 p-2.5 text-left">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
             <Image
               src={getVehicleImagePath(vehicle.type)}
               alt={vehicle.type}
-              width={20}
-              height={20}
-              className="object-contain"
+              width={36}
+              height={36}
+              className="object-cover"
             />
           </div>
 

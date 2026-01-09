@@ -129,16 +129,16 @@ export function VehicleCard({ vehicle, className }: VehicleCardProps) {
         {/* Icon */}
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+            "flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg",
             config.bgColor,
           )}
         >
           <Image
             src={getVehicleImagePath(vehicle.type)}
             alt={vehicle.type}
-            width={24}
-            height={24}
-            className="object-contain"
+            width={52}
+            height={52}
+            className="object-cover"
           />
         </div>
 
