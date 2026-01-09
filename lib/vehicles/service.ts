@@ -113,23 +113,13 @@ export function mapVehicleToUi(vehicle: ApiVehicleDetail): Vehicle | null {
     return null;
   }
 
-  // Mapping du type de véhicule basé sur le code
-  const vehicleTypeCode = vehicle.vehicle_type.code.toUpperCase();
-  const vehicleType: Vehicle["type"] =
-    vehicleTypeCode === "VSAV" ||
-    vehicleTypeCode === "FPT" ||
-    vehicleTypeCode === "EPA" ||
-    vehicleTypeCode === "VTU"
-      ? vehicleTypeCode
-      : "VTU";
-
   // Mapping du statut
   const status = mapStatusLabelToKey(vehicle.status?.label);
 
   return {
     id: vehicle.vehicle_id,
     callSign: vehicle.immatriculation,
-    type: vehicleType,
+    type: vehicle.vehicle_type.code.toUpperCase() as Vehicle["type"],
     status,
     location: {
       lat: latitude,

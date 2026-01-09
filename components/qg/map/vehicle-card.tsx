@@ -73,25 +73,6 @@ export const vehicleStatusConfig: Record<
   },
 };
 
-export const vehicleTypeLabels: Record<Vehicle["type"], string> = {
-  VSAV: "Véhicule de Secours",
-  FPT: "Fourgon Pompe-Tonne",
-  EPA: "Échelle Pivotante",
-  VTU: "Véhicule Tout Usage",
-  BEA: "Bateau Échelle Autopompe",
-  CCF: "Camion Citerne Feux de Forêt",
-  CCGC: "Camion Citerne Grande Capacité",
-  FPTSR: "Fourgon Pompe Tonne Secours Routier",
-  PC_Mobile: "Poste de Commandement Mobile",
-  VAR: "Véhicule d'Assistance Respiratoire",
-  VIRT: "Véhicule d'Intervention Robotisé Téléopéré",
-  VLCG: "Véhicule de Liaison et de Commandement de Groupe",
-  VLM: "Véhicule Léger Médicalisé",
-  VLR: "Véhicule Léger de Reconnaissance",
-  VPI: "Véhicule de Premier Intervention",
-  VSR: "Véhicule de Secours Routier",
-};
-
 const formatVehicleTime = (dateString: string) => {
   try {
     return new Intl.DateTimeFormat("fr-FR", {
@@ -167,9 +148,7 @@ export function VehicleCard({ vehicle, className }: VehicleCardProps) {
           </div>
 
           {/* Type label */}
-          <p className="mt-1 truncate text-xs text-slate-600">
-            {vehicleTypeLabels[vehicle.type]}
-          </p>
+          <p className="mt-1 truncate text-xs text-slate-600">{vehicle.type}</p>
 
           {/* Metadata */}
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">

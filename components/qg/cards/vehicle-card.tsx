@@ -9,11 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown, Clock, Users, Warehouse } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  vehicleStatusConfig,
-  vehicleTypeLabels,
-  formatTime,
-} from "./card-configs";
+import { vehicleStatusConfig, formatTime } from "./card-configs";
 import { getVehicleImagePath } from "@/lib/vehicles/images";
 import Image from "next/image";
 
@@ -51,9 +47,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
               >
                 {status.label}
               </Badge>
-              <span className="truncate">
-                {vehicleTypeLabels[vehicle.type] || vehicle.type}
-              </span>
+              <span className="truncate">{vehicle.type}</span>
             </div>
           </div>
 
