@@ -152,7 +152,9 @@ export function AssignmentCard({
                                   <div className="flex min-w-0 flex-1 items-center gap-1.5">
                                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-100">
                                       <Image
-                                        src={getVehicleImagePath(vehicleTypeCode as any)}
+                                        src={getVehicleImagePath(
+                                          vehicleTypeCode as any,
+                                        )}
                                         alt={vehicleTypeCode}
                                         width={16}
                                         height={16}
