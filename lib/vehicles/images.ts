@@ -5,7 +5,7 @@ import type { VehicleType } from "@/types/qg";
  * @param vehicleType - Le type de véhicule (VSAV, FPT, EPA, VTU, etc.)
  * @returns Le chemin de l'image dans le dossier public/vehicles
  */
-export function getVehicleImagePath(vehicleType: VehicleType): string {
+export function getVehicleImagePath(vehicleType: VehicleType | string): string {
   return `/vehicles/vehicle_${vehicleType}.png`;
 }
 
@@ -14,6 +14,8 @@ export function getVehicleImagePath(vehicleType: VehicleType): string {
  * @param vehicleType - Le type de véhicule (VSAV, FPT, EPA, VTU, etc.)
  * @returns Le chemin de l'image vue de dessus dans le dossier public/vehicles
  */
-export function getVehicleImagePathTopView(vehicleType: VehicleType): string {
+export function getVehicleImagePathTopView(
+  vehicleType: VehicleType | string,
+): string {
   return `/vehicles/vehicle_${vehicleType}_vue_dessus.png`;
 }
