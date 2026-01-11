@@ -37,7 +37,7 @@ const normalizeLabel = (value?: string) =>
 const getKindPresentation = (label?: string): KindPresentation => {
   const normalized = normalizeLabel(label);
 
-  if (normalized.includes("maintenance") || normalized.includes("vehicule")) {
+  if (normalized.includes("maintenance") || normalized.includes("véhicule")) {
     return {
       label: label ?? "Centre maintenance",
       Icon: Wrench,

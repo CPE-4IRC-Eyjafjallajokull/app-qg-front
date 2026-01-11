@@ -91,7 +91,7 @@ export const casualtiesResources: AdminResource[] = [
   {
     key: "casualty-transports",
     title: "Transports de victimes",
-    description: "Trajets et prises en charge par vehicule.",
+    description: "Trajets et prises en charge par véhicule.",
     endpoint: "transports",
     category: "casualties",
     group: "Transports",
@@ -109,7 +109,7 @@ export const casualtiesResources: AdminResource[] = [
       },
       {
         key: "vehicle_assignment_id",
-        label: "Affectation vehicule",
+        label: "Affectation véhicule",
         reference: {
           resourceKey: "vehicle-assignments",
           valueKey: "vehicle_assignment_id",

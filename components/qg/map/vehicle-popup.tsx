@@ -33,7 +33,7 @@ export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
           {/* Header minimaliste */}
           <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-              Vehicule
+              Véhicule
             </p>
             <Button
               variant="ghost"
@@ -46,7 +46,7 @@ export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
             </Button>
           </div>
 
-          {/* Carte vehicule */}
+          {/* Carte véhicule */}
           <VehicleCard vehicle={vehicle} />
         </div>
       </div>

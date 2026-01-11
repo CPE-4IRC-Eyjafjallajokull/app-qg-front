@@ -4,8 +4,10 @@ import {
   Layers,
   Link2,
   Package,
+  ShieldPlus,
   Tag,
   Tags,
+  UserPlus,
 } from "lucide-react";
 import type { AdminResource } from "@/lib/admin/types";
 
@@ -248,11 +250,11 @@ export const incidentsResources: AdminResource[] = [
   },
   {
     key: "incident-vehicle-requirements",
-    title: "Besoins vehicules",
-    description: "Quantites attendues par groupe et type de vehicule.",
+    title: "Besoins véhicules",
+    description: "Quantités attendues par groupe et type de véhicule.",
     endpoint: "vehicle-requirements",
     category: "incidents",
-    group: "Besoins vehicules",
+    group: "Besoins véhicules",
     idFields: ["group_id", "vehicle_type_id"],
     fields: [
       {
@@ -268,7 +270,7 @@ export const incidentsResources: AdminResource[] = [
       },
       {
         key: "vehicle_type_id",
-        label: "Type de vehicule",
+        label: "Type de véhicule",
         required: true,
         reference: {
           resourceKey: "vehicle-types",
@@ -298,5 +300,108 @@ export const incidentsResources: AdminResource[] = [
       "created_at",
     ],
     icon: Package,
+  },
+  {
+    key: "reinforcements",
+    title: "Renforts",
+    description: "Demandes de renfort pour phases d'incident.",
+    endpoint: "reinforcements",
+    category: "incidents",
+    group: "Renforts",
+    idFields: ["reinforcement_id"],
+    fields: [
+      {
+        key: "incident_phase_id",
+        label: "Phase d'incident",
+        required: true,
+        reference: {
+          resourceKey: "incident-phases",
+          valueKey: "incident_phase_id",
+          labelKey: ["incident.address", "phase_type.label"],
+          placeholder: "Selectionner une phase",
+        },
+      },
+      { key: "validated_at", label: "Validé le", type: "datetime" },
+      { key: "rejected_at", label: "Rejeté le", type: "datetime" },
+      { key: "notes", label: "Notes" },
+    ],
+    updateFields: [
+      {
+        key: "incident_phase_id",
+        label: "Phase d'incident",
+        reference: {
+          resourceKey: "incident-phases",
+          valueKey: "incident_phase_id",
+          labelKey: ["incident.address", "phase_type.label"],
+          placeholder: "Selectionner une phase",
+        },
+      },
+      { key: "validated_at", label: "Validé le", type: "datetime" },
+      { key: "rejected_at", label: "Rejeté le", type: "datetime" },
+      { key: "notes", label: "Notes" },
+    ],
+    readFields: [
+      { key: "reinforcement_id", hidden: true },
+      "incident_phase_id",
+      "validated_at",
+      "rejected_at",
+      "notes",
+      "created_at",
+    ],
+    icon: ShieldPlus,
+  },
+  {
+    key: "reinforcement-vehicle-requests",
+    title: "Besoins vehicules renforts",
+    description: "Quantites demandees par type de vehicule.",
+    endpoint: "reinforcement-vehicle-requests",
+    category: "incidents",
+    group: "Renforts",
+    idFields: ["reinforcement_id", "vehicle_type_id"],
+    fields: [
+      {
+        key: "reinforcement_id",
+        label: "Renfort",
+        required: true,
+        reference: {
+          resourceKey: "reinforcements",
+          valueKey: "reinforcement_id",
+          labelKey: "incident_phase_id",
+          placeholder: "Selectionner un renfort",
+        },
+      },
+      {
+        key: "vehicle_type_id",
+        label: "Type de vehicule",
+        required: true,
+        reference: {
+          resourceKey: "vehicle-types",
+          valueKey: "vehicle_type_id",
+          labelKey: ["code", "label"],
+          placeholder: "Selectionner un type",
+        },
+      },
+      { key: "quantity", label: "Quantite", type: "integer", required: true },
+      {
+        key: "assigned_quantity",
+        label: "Quantite assignee",
+        type: "integer",
+      },
+    ],
+    updateFields: [
+      { key: "quantity", label: "Quantite", type: "integer" },
+      {
+        key: "assigned_quantity",
+        label: "Quantite assignee",
+        type: "integer",
+      },
+    ],
+    readFields: [
+      "reinforcement_id",
+      "vehicle_type_id",
+      "quantity",
+      "assigned_quantity",
+    ],
+    icon: UserPlus,
   },
 ];

@@ -9,16 +9,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Check, ChevronDown, Fuel, Route, X } from "lucide-react";
+import { Check, ChevronDown, Fuel, Route, X, LoaderCircle } from "lucide-react";
 import { formatTime } from "./card-configs";
 import { getVehicleImagePath } from "@/lib/vehicles/images";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 type AssignmentCardProps = {
   assignment: AssignmentProposal;
   resolve: (type: ResolverType, id: string) => Record<string, unknown> | null;
-  onValidate?: (assignmentId: string) => void;
+  onValidate?: (assignmentId: string) => void | Promise<void>;
   onReject?: (assignmentId: string) => void;
 };
 
@@ -28,12 +29,25 @@ export function AssignmentCard({
   onValidate,
   onReject,
 }: AssignmentCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const incident = resolve("incident_id", assignment.incident_id) as {
     address?: string;
     city?: string;
     zipcode?: string;
     title?: string;
   } | null;
+
+  const handleValidate = async (assignmentId: string) => {
+    if (!onValidate) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await onValidate(assignmentId);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const incidentLabel = incident
     ? `${incident.address || ""}, ${incident.zipcode || ""} ${incident.city || ""}`.trim()
@@ -69,10 +83,8 @@ export function AssignmentCard({
           <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
         </CollapsibleTrigger>
 
-        {/* Contenu dépliable - Propositions */}
         <CollapsibleContent>
           <div className="space-y-2.5 border-t border-white/10 p-2.5">
-            {/* Propositions groupées par phase */}
             <div className="space-y-2.5">
               {(() => {
                 // Grouper les propositions par phase
@@ -171,7 +183,7 @@ export function AssignmentCard({
                                         {vehicleLabel}
                                       </span>
                                       {vehicleType && (
-                                        <span className="truncate text-[10px] text-white/40">
+                                        <span className="truncate text-[10px] text-white/40 break-words whitespace-normal">
                                           {vehicleType}
                                         </span>
                                       )}
@@ -245,12 +257,17 @@ export function AssignmentCard({
                   "flex-1 gap-1.5 bg-emerald-600 text-white",
                   "hover:bg-emerald-500",
                 )}
+                disabled={isLoading}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onValidate?.(assignment.proposal_id);
+                  handleValidate(assignment.proposal_id);
                 }}
               >
-                <Check className="h-3.5 w-3.5" />
+                {isLoading ? (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
                 <span className="text-xs font-medium">Valider</span>
               </Button>
             </div>

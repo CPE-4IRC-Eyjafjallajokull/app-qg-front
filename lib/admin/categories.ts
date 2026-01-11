@@ -1,4 +1,11 @@
-import { AlertTriangle, HeartPulse, MapPin, Truck, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardList,
+  HeartPulse,
+  MapPin,
+  Truck,
+  Users,
+} from "lucide-react";
 import type { AdminCategory } from "@/lib/admin/types";
 
 export const adminCategories: AdminCategory[] = [
@@ -36,5 +43,12 @@ export const adminCategories: AdminCategory[] = [
     description: "Gestion des operateurs.",
     prefix: "/operators",
     icon: Users,
+  },
+  {
+    key: "assignment-proposals",
+    label: "Moteur de décision",
+    description: "Propositions et details d'affectation.",
+    prefix: "/vehicle-assignment-proposals",
+    icon: ClipboardList,
   },
 ];

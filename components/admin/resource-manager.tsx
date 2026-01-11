@@ -229,7 +229,7 @@ export function ResourceManager({ config }: ResourceManagerProps) {
       await adminRequest(`${config.endpoint}/${idPath}`, {
         method: "DELETE",
       });
-      toast.success(`${config.title} supprime.`);
+      toast.success(`${config.title} supprimé.`);
       setDeleteTarget(null);
       await fetchItems();
     } catch (error) {
@@ -336,6 +336,7 @@ export function ResourceManager({ config }: ResourceManagerProps) {
                       <Input
                         id={`${config.key}-${field.key}`}
                         type={getInputType(field.type)}
+                        step={field.type === "number" ? "any" : undefined}
                         placeholder={
                           field.placeholder ??
                           (field.type === "datetime"
@@ -357,7 +358,7 @@ export function ResourceManager({ config }: ResourceManagerProps) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="submit" disabled={saving}>
-                  {editingItem ? "Mettre a jour" : "Creer"}
+                  {editingItem ? "Mettre à jour" : "Créer"}
                 </Button>
                 {editingItem ? (
                   <Button

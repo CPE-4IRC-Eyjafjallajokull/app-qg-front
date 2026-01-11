@@ -606,7 +606,7 @@ export function HomeScreen() {
           incident_started_at: new Date().toISOString(),
         });
 
-        toast.success("Incident declare.");
+        toast.success("Incident déclaré.");
         setMapClickLocation(null);
       } catch (error) {
         toast.error(

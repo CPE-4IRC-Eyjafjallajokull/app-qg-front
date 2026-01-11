@@ -8,6 +8,7 @@ import { casualtiesResources } from "@/lib/admin/resources/casualties";
 import { incidentsResources } from "@/lib/admin/resources/incidents";
 import { interestPointsResources } from "@/lib/admin/resources/interest-points";
 import { operatorsResources } from "@/lib/admin/resources/operators";
+import { vehicleAssignmentProposalResources } from "@/lib/admin/resources/vehicle-assignment-proposals";
 import { vehiclesResources } from "@/lib/admin/resources/vehicles";
 
 const normalizeSegment = (value?: string) =>
@@ -50,6 +51,9 @@ export const adminResources: AdminResource[] = [
   ...vehiclesResources.map(withCategoryPrefix).map(withAdminPath),
   ...interestPointsResources.map(withCategoryPrefix).map(withAdminPath),
   ...operatorsResources.map(withCategoryPrefix).map(withAdminPath),
+  ...vehicleAssignmentProposalResources
+    .map(withCategoryPrefix)
+    .map(withAdminPath),
 ];
 
 const adminResourceByKey = new Map(

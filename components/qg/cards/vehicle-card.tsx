@@ -2,7 +2,6 @@
 
 import type { Vehicle } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -148,21 +147,27 @@ export function VehicleCard({
           </div>
 
           <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-white/40 hover:bg-white/10 hover:text-white"
-              title="Centrer sur le vehicule"
-              aria-label="Centrer sur le vehicule"
+            <div
+              role="button"
+              tabIndex={0}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white"
+              title="Centrer sur le véhicule"
+              aria-label="Centrer sur le véhicule"
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
                 onFocus?.(vehicle);
               }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onFocus?.(vehicle);
+                }
+              }}
             >
               <LocateFixed className="h-3.5 w-3.5" />
-            </Button>
+            </div>
             <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
           </div>
         </CollapsibleTrigger>

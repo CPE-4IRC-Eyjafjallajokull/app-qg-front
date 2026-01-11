@@ -118,6 +118,27 @@ export async function rejectAssignmentProposal(
   return;
 }
 
+export async function requestAssignmentProposal(
+  incidentId: string,
+): Promise<void> {
+  const response = await fetchWithAuth("/api/assignment-proposals/new", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ incident_id: incidentId }),
+  });
+
+  const parsedBody = await parseResponseBody(response);
+
+  if (!response.ok) {
+    const errorMessage =
+      getErrorMessage(response, parsedBody) ||
+      `Failed to request assignment proposal for ${incidentId}`;
+    throw new Error(errorMessage);
+  }
+}
+
 export function mapAssignmentProposalToUi(
   proposal: ApiAssignmentProposalRead,
 ): AssignmentProposal {

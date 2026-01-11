@@ -1,6 +1,8 @@
 "use client";
 
 import type { Incident } from "@/types/qg";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +10,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { AlertTriangle, ChevronDown, LocateFixed, MapPin } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  LoaderCircle,
+  LocateFixed,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatErrorMessage } from "@/lib/error-message";
+import { requestAssignmentProposal } from "@/lib/assignment-proposals/service";
 
 const severityConfig: Record<
   Incident["severity"],
@@ -87,8 +98,30 @@ export function IncidentCard({
   incident: Incident;
   onFocus?: (incident: Incident) => void;
 }) {
+  const [isRequesting, setIsRequesting] = useState(false);
   const severity = severityConfig[incident.severity];
   const status = statusConfig[incident.status];
+  const isActionDisabled = isRequesting || incident.status === "resolved";
+
+  const handleRequestAssignment = async () => {
+    if (!incident.id) {
+      return;
+    }
+    setIsRequesting(true);
+    try {
+      await requestAssignmentProposal(incident.id);
+      toast.success("Proposition d'affectation demandee.");
+    } catch (error) {
+      toast.error(
+        formatErrorMessage(
+          "Erreur lors de la demande de proposition d'affectation.",
+          error,
+        ),
+      );
+    } finally {
+      setIsRequesting(false);
+    }
+  };
 
   return (
     <Collapsible defaultOpen={incident.status === "new"}>
@@ -180,7 +213,7 @@ export function IncidentCard({
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Badge
                 variant="outline"
                 className={cn("px-1.5 py-0.5 text-[10px]", status.className)}
@@ -194,6 +227,31 @@ export function IncidentCard({
                   {incident.location.lng.toFixed(3)}
                 </span>
               </span>
+              <div className="ml-auto">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={isActionDisabled}
+                  className={cn(
+                    "h-7 gap-1.5 border-primary/30 bg-primary/10 px-2 text-[10px] font-semibold text-white/80",
+                    "hover:border-primary/40 hover:bg-primary/20 hover:text-white",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleRequestAssignment();
+                  }}
+                >
+                  {isRequesting ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Proposer
+                </Button>
+              </div>
             </div>
           </div>
         </CollapsibleContent>

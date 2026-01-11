@@ -131,7 +131,7 @@ export function VehiclesList() {
     event.preventDefault();
 
     if (!endpoint) {
-      toast.error("Configuration vehicule manquante.");
+      toast.error("Configuration véhicule manquante.");
       return;
     }
 
@@ -156,13 +156,13 @@ export function VehiclesList() {
         method: "POST",
         body: payload,
       });
-      toast.success("Vehicule cree.");
+      toast.success("Véhicule crée.");
       setFormState(emptyForm);
       await fetchVehicles();
     } catch (error) {
       console.error("Create vehicle error", error);
       toast.error(
-        formatErrorMessage("Erreur lors de la creation du vehicule.", error),
+        formatErrorMessage("Erreur lors de la creation du véhicule.", error),
       );
     } finally {
       setSaving(false);
@@ -189,7 +189,7 @@ export function VehiclesList() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              Nouvelle entree vehicule
+              Nouvelle entree véhicule
             </p>
             <Button
               variant="outline"
@@ -267,7 +267,7 @@ export function VehiclesList() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Button type="submit" disabled={saving}>
-                Creer
+                Créer
               </Button>
             </div>
           </form>
@@ -298,7 +298,7 @@ export function VehiclesList() {
                     colSpan={displayFields.length + 1}
                     className="text-center text-sm text-muted-foreground"
                   >
-                    Aucun vehicule disponible.
+                    Aucun véhicule disponible.
                   </TableCell>
                 </TableRow>
               ) : (

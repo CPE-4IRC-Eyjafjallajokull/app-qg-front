@@ -42,7 +42,7 @@ export const vehiclesResources: AdminResource[] = [
           placeholder: "Selectionner une energie",
         },
       },
-      { key: "energy_level", label: "Energy level", type: "integer" },
+      { key: "energy_level", label: "Energy level", type: "number" },
       {
         key: "base_interest_point_id",
         label: "Base interest point id",
@@ -92,7 +92,7 @@ export const vehiclesResources: AdminResource[] = [
           resourceKey: "vehicles",
           valueKey: "vehicle_id",
           labelKey: ["immatriculation", "vehicle_type.code"],
-          placeholder: "Selectionner un vehicule",
+          placeholder: "Selectionner un véhicule",
         },
       },
       {
@@ -202,7 +202,7 @@ export const vehiclesResources: AdminResource[] = [
           resourceKey: "vehicles",
           valueKey: "vehicle_id",
           labelKey: "immatriculation",
-          placeholder: "Selectionner un vehicule",
+          placeholder: "Selectionner un véhicule",
         },
       },
       { key: "latitude", label: "Latitude", type: "number", required: true },
@@ -257,7 +257,7 @@ export const vehiclesResources: AdminResource[] = [
   {
     key: "vehicle-type-consumable-specs",
     title: "Specifications consommables",
-    description: "Capacites par type de vehicule.",
+    description: "Capacites par type de véhicule.",
     endpoint: "/consumables/specs",
     category: "vehicles",
     group: "Consommables",
@@ -306,7 +306,7 @@ export const vehiclesResources: AdminResource[] = [
   {
     key: "vehicle-consumables-stock",
     title: "Stocks de consommables",
-    description: "Quantites disponibles par vehicule.",
+    description: "Quantites disponibles par véhicule.",
     endpoint: "consumables/stock",
     category: "vehicles",
     group: "Consommables",
@@ -320,7 +320,7 @@ export const vehiclesResources: AdminResource[] = [
           resourceKey: "vehicles",
           valueKey: "vehicle_id",
           labelKey: "immatriculation",
-          placeholder: "Selectionner un vehicule",
+          placeholder: "Selectionner un véhicule",
         },
       },
       {
@@ -377,7 +377,7 @@ export const vehiclesResources: AdminResource[] = [
   {
     key: "vehicle-statuses",
     title: "Statuts de vehicules",
-    description: "Etat courant d'un vehicule.",
+    description: "Etat courant d'un véhicule.",
     endpoint: "statuses",
     category: "vehicles",
     group: "Referentiels",

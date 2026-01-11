@@ -149,7 +149,7 @@ export function InterestPointQuickCreate({
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
       <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
-        Creer un point d&apos;interet
+        Créer un point d&apos;interet
       </p>
       <div className="grid gap-2">
         <Input
@@ -206,7 +206,7 @@ export function InterestPointQuickCreate({
         disabled={isSubmitting || !kindId || interestPointKinds.length === 0}
       >
         <MapPinPlus className="h-3.5 w-3.5" />
-        {isSubmitting ? "Creation..." : "Creer le point"}
+        {isSubmitting ? "Creation..." : "Créer le point"}
       </Button>
     </form>
   );

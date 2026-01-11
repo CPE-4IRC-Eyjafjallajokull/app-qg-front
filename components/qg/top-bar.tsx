@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import {
-  LogOut,
-  Radio,
-  Settings,
-  Shield,
-  Truck,
-  Zap,
-} from "lucide-react";
+import { LogOut, Radio, Settings, Shield, Truck, Zap } from "lucide-react";
 import type { Incident, Vehicle } from "@/types/qg";
 import { cn } from "@/lib/utils";
 import { useLiveEvents } from "@/components/live-events-provider";
@@ -43,7 +36,7 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 backdrop-blur-xl">
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 py-2 backdrop-blur-xl px-2 md:pl-2 md:pr-3">
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
@@ -69,7 +62,7 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
           <StatusPill
             icon={<Radio className="h-3.5 w-3.5" />}
             label="Live"
-            value={isConnected ? "Connecte" : "Hors ligne"}
+            value={isConnected ? "Connecté" : "Hors ligne"}
             variant={isConnected ? "success" : "muted"}
             pulse={isConnected}
           />
@@ -117,7 +110,7 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 py-2 backdrop-blur-xl pl-3 pr-2">
           {session?.user ? (
             <>
               <div className="hidden text-right sm:block">
@@ -125,7 +118,7 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
                   {session.user.name ?? "Operateur"}
                 </p>
                 <p className="text-[10px] text-white/50">
-                  {isAuthenticated ? "Authentifie" : "Non connecte"}
+                  {isAuthenticated ? "Connecté" : "Déconnecté"}
                 </p>
               </div>
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">

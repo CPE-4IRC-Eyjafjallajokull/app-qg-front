@@ -1,9 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { AssignmentProposal, Incident, Vehicle } from "@/types/qg";
+import type {
+  AssignmentProposal,
+  Incident,
+  IncidentSeverity,
+  Vehicle,
+  VehicleStatus,
+  VehicleType,
+} from "@/types/qg";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
@@ -20,6 +34,10 @@ import { useResolver } from "@/components/resolver-provider";
 import { IncidentCard } from "./cards/incident-card";
 import { VehicleCard } from "./cards/vehicle-card";
 import { AssignmentCard } from "./cards/assignment-card";
+import { EmptyState } from "./side-panel/empty-state";
+import { FiltersPanel } from "./side-panel/filters-panel";
+import { MetricCard } from "./side-panel/metric-card";
+import { MiniCounter } from "./side-panel/mini-counter";
 
 type SidePanelProps = {
   incidents: Incident[];
@@ -41,6 +59,21 @@ export function SidePanel({
   onFocusVehicle,
 }: SidePanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [incidentQuery, setIncidentQuery] = useState("");
+  const [incidentSeverity, setIncidentSeverity] = useState<
+    IncidentSeverity | "all"
+  >("all");
+  const [incidentAssignment, setIncidentAssignment] = useState<
+    "all" | "assigned" | "unassigned"
+  >("all");
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [vehicleAvailability, setVehicleAvailability] = useState<
+    VehicleStatus | "all"
+  >("all");
+  const [vehicleType, setVehicleType] = useState<VehicleType | "all">("all");
+  const [assignmentStatus, setAssignmentStatus] = useState<
+    "all" | "pending" | "validated" | "rejected"
+  >("all");
   const { isConnected } = useLiveEvents();
   const { resolve } = useResolver();
 
@@ -57,6 +90,77 @@ export function SidePanel({
     (vehicle) =>
       vehicle.status === "engaged" || vehicle.status === "on_intervention",
   );
+
+  const normalizedIncidentQuery = incidentQuery.trim().toLowerCase();
+  const filteredIncidents = incidents.filter((incident) => {
+    if (incidentSeverity !== "all" && incident.severity !== incidentSeverity) {
+      return false;
+    }
+    if (incidentAssignment === "assigned" && incident.status !== "assigned") {
+      return false;
+    }
+    if (incidentAssignment === "unassigned" && incident.status !== "new") {
+      return false;
+    }
+    if (!normalizedIncidentQuery) {
+      return true;
+    }
+    return (
+      incident.title.toLowerCase().includes(normalizedIncidentQuery) ||
+      incident.description.toLowerCase().includes(normalizedIncidentQuery) ||
+      incident.id.toLowerCase().includes(normalizedIncidentQuery)
+    );
+  });
+  const isIncidentFiltered =
+    normalizedIncidentQuery ||
+    incidentSeverity !== "all" ||
+    incidentAssignment !== "all";
+
+  const normalizedVehicleQuery = vehicleQuery.trim().toLowerCase();
+  const filteredVehicles = vehicles.filter((vehicle) => {
+    if (
+      vehicleAvailability !== "all" &&
+      vehicle.status !== vehicleAvailability
+    ) {
+      return false;
+    }
+    if (vehicleType !== "all" && vehicle.type !== vehicleType) {
+      return false;
+    }
+    if (!normalizedVehicleQuery) {
+      return true;
+    }
+    return (
+      vehicle.callSign.toLowerCase().includes(normalizedVehicleQuery) ||
+      vehicle.id.toLowerCase().includes(normalizedVehicleQuery) ||
+      (vehicle.station ?? "").toLowerCase().includes(normalizedVehicleQuery)
+    );
+  });
+  const isVehicleFiltered =
+    normalizedVehicleQuery ||
+    vehicleAvailability !== "all" ||
+    vehicleType !== "all";
+
+  const filteredAssignments = assignments.filter((assignment) => {
+    if (assignmentStatus === "validated" && !assignment.validated_at) {
+      return false;
+    }
+    if (assignmentStatus === "rejected" && !assignment.rejected_at) {
+      return false;
+    }
+    if (
+      assignmentStatus === "pending" &&
+      (assignment.validated_at || assignment.rejected_at)
+    ) {
+      return false;
+    }
+
+    return (
+      assignment.proposal_id.toLowerCase() ||
+      assignment.incident_id.toLowerCase()
+    );
+  });
+  const isAssignmentFiltered = assignmentStatus !== "all";
 
   if (isCollapsed) {
     return (
@@ -76,7 +180,7 @@ export function SidePanel({
               "h-2 w-2 rounded-full",
               isConnected ? "animate-pulse bg-emerald-500" : "bg-white/30",
             )}
-            title={isConnected ? "Connecte" : "Hors ligne"}
+            title={isConnected ? "Connecté" : "Hors ligne"}
           />
 
           <div className="flex flex-col items-center gap-3">
@@ -90,7 +194,7 @@ export function SidePanel({
               count={availableVehicles.length}
               variant="success"
               icon={<Truck className="h-3.5 w-3.5" />}
-              title={`${availableVehicles.length} vehicule(s) disponible(s)`}
+              title={`${availableVehicles.length} véhicule(s) disponible(s)`}
             />
             <MiniCounter
               count={assignments.length}
@@ -113,7 +217,7 @@ export function SidePanel({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-white">
-              Centre de Commande
+              Tableau de bord
             </h2>
             <div className="flex items-center gap-1.5">
               <div
@@ -123,7 +227,7 @@ export function SidePanel({
                 )}
               />
               <span className="text-[10px] font-medium text-white/50">
-                {isConnected ? "Flux temps reel actif" : "Hors ligne"}
+                {isConnected ? "Flux temps réel actif" : "Hors ligne"}
               </span>
             </div>
           </div>
@@ -199,17 +303,68 @@ export function SidePanel({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="incidents" className="mt-2 min-h-0 flex-1 px-2">
-          <ScrollArea className="h-full">
+        <TabsContent
+          value="incidents"
+          className="flex min-h-0 flex-1 flex-col px-2"
+        >
+          <FiltersPanel
+            query={incidentQuery}
+            onQueryChange={setIncidentQuery}
+            placeholder="Rechercher un incident..."
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={incidentSeverity}
+                onValueChange={(value) =>
+                  setIncidentSeverity(value as IncidentSeverity | "all")
+                }
+              >
+                <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
+                  <SelectValue placeholder="Criticite" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes criticités</SelectItem>
+                  <SelectItem value="critical">Critique</SelectItem>
+                  <SelectItem value="high">Élevée</SelectItem>
+                  <SelectItem value="medium">Moyenne</SelectItem>
+                  <SelectItem value="low">Faible</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={incidentAssignment}
+                onValueChange={(value) =>
+                  setIncidentAssignment(
+                    value as "all" | "assigned" | "unassigned",
+                  )
+                }
+              >
+                <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
+                  <SelectValue placeholder="Affectation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous statuts</SelectItem>
+                  <SelectItem value="assigned">Assigné</SelectItem>
+                  <SelectItem value="unassigned">Non assigné</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </FiltersPanel>
+          <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-1.5 pb-2 pr-2">
-              {incidents.length === 0 ? (
+              {filteredIncidents.length === 0 ? (
                 <EmptyState
                   icon={<Zap className="h-8 w-8" />}
-                  title="Aucun incident"
-                  description="Aucun incident signale pour le moment"
+                  title={
+                    isIncidentFiltered ? "Aucun resultat" : "Aucun incident"
+                  }
+                  description={
+                    isIncidentFiltered
+                      ? "Ajustez vos filtres pour elargir la recherche"
+                      : "Aucun incident signale pour le moment"
+                  }
                 />
               ) : (
-                incidents.map((incident) => (
+                filteredIncidents.map((incident) => (
                   <IncidentCard
                     key={incident.id}
                     incident={incident}
@@ -221,17 +376,83 @@ export function SidePanel({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="fleet" className="mt-2 min-h-0 flex-1 px-2">
-          <ScrollArea className="h-full">
+        <TabsContent
+          value="fleet"
+          className="flex min-h-0 flex-1 flex-col px-2"
+        >
+          <FiltersPanel
+            query={vehicleQuery}
+            onQueryChange={setVehicleQuery}
+            placeholder="Rechercher un vehicule..."
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={vehicleAvailability}
+                onValueChange={(value) =>
+                  setVehicleAvailability(value as VehicleStatus | "all")
+                }
+              >
+                <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
+                  <SelectValue placeholder="Disponibilite" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous statuts</SelectItem>
+                  <SelectItem value="available">Disponible</SelectItem>
+                  <SelectItem value="engaged">Engagé</SelectItem>
+                  <SelectItem value="on_intervention">Intervention</SelectItem>
+                  <SelectItem value="returning">Retour</SelectItem>
+                  <SelectItem value="transport">Transport</SelectItem>
+                  <SelectItem value="unavailable">Indisponible</SelectItem>
+                  <SelectItem value="out_of_service">Hors service</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={vehicleType}
+                onValueChange={(value) =>
+                  setVehicleType(value as VehicleType | "all")
+                }
+              >
+                <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous types</SelectItem>
+                  <SelectItem value="VSAV">VSAV</SelectItem>
+                  <SelectItem value="FPT">FPT</SelectItem>
+                  <SelectItem value="EPA">EPA</SelectItem>
+                  <SelectItem value="VTU">VTU</SelectItem>
+                  <SelectItem value="BEA">BEA</SelectItem>
+                  <SelectItem value="CCF">CCF</SelectItem>
+                  <SelectItem value="CCGC">CCGC</SelectItem>
+                  <SelectItem value="FPTSR">FPTSR</SelectItem>
+                  <SelectItem value="PC_Mobile">PC Mobile</SelectItem>
+                  <SelectItem value="VAR">VAR</SelectItem>
+                  <SelectItem value="VIRT">VIRT</SelectItem>
+                  <SelectItem value="VLCG">VLCG</SelectItem>
+                  <SelectItem value="VLM">VLM</SelectItem>
+                  <SelectItem value="VLR">VLR</SelectItem>
+                  <SelectItem value="VPI">VPI</SelectItem>
+                  <SelectItem value="VSR">VSR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </FiltersPanel>
+          <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-1.5 pb-2 pr-2">
-              {vehicles.length === 0 ? (
+              {filteredVehicles.length === 0 ? (
                 <EmptyState
                   icon={<Truck className="h-8 w-8" />}
-                  title="Aucun vehicule"
-                  description="Aucun vehicule disponible"
+                  title={
+                    isVehicleFiltered ? "Aucun resultat" : "Aucun vehicule"
+                  }
+                  description={
+                    isVehicleFiltered
+                      ? "Ajustez vos filtres pour elargir la recherche"
+                      : "Aucun vehicule disponible"
+                  }
                 />
               ) : (
-                vehicles.map((vehicle) => (
+                filteredVehicles.map((vehicle) => (
                   <VehicleCard
                     key={vehicle.id}
                     vehicle={vehicle}
@@ -243,17 +464,48 @@ export function SidePanel({
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="assignments" className="mt-2 min-h-0 flex-1 px-2">
-          <ScrollArea className="h-full">
+        <TabsContent
+          value="assignments"
+          className="flex min-h-0 flex-1 flex-col px-2"
+        >
+          <FiltersPanel>
+            <Select
+              value={assignmentStatus}
+              onValueChange={(value) =>
+                setAssignmentStatus(
+                  value as "all" | "pending" | "validated" | "rejected",
+                )
+              }
+            >
+              <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="pending">En attente</SelectItem>
+                <SelectItem value="validated">Validées</SelectItem>
+                <SelectItem value="rejected">Rejetées</SelectItem>
+              </SelectContent>
+            </Select>
+          </FiltersPanel>
+          <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-1.5 pb-2 pr-2">
-              {assignments.length === 0 ? (
+              {filteredAssignments.length === 0 ? (
                 <EmptyState
                   icon={<Users className="h-8 w-8" />}
-                  title="Aucune affectation"
-                  description="Aucune proposition en attente"
+                  title={
+                    isAssignmentFiltered
+                      ? "Aucun resultat"
+                      : "Aucune affectation"
+                  }
+                  description={
+                    isAssignmentFiltered
+                      ? "Ajustez vos filtres pour elargir la recherche"
+                      : "Aucune proposition en attente"
+                  }
                 />
               ) : (
-                assignments.map((assignment) => (
+                filteredAssignments.map((assignment) => (
                   <AssignmentCard
                     key={`${assignment.proposal_id}-${assignment.generated_at}`}
                     assignment={assignment}
@@ -267,104 +519,6 @@ export function SidePanel({
           </ScrollArea>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-type MiniCounterProps = {
-  count: number;
-  variant: "emergency" | "warning" | "success" | "info" | "muted";
-  icon: React.ReactNode;
-  title: string;
-};
-
-function MiniCounter({ count, variant, icon, title }: MiniCounterProps) {
-  const styles = {
-    emergency: "bg-red-500/20 text-red-400 border-red-500/30",
-    warning: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    success: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    info: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    muted: "bg-white/10 text-white/50 border-white/10",
-  };
-
-  return (
-    <div
-      className={cn(
-        "flex h-9 w-9 flex-col items-center justify-center rounded-lg border",
-        styles[variant],
-      )}
-      title={title}
-    >
-      {icon}
-      <span className="mt-0.5 text-[10px] font-bold leading-none">{count}</span>
-    </div>
-  );
-}
-
-type MetricCardProps = {
-  label: string;
-  value: number;
-  subLabel: string;
-  variant: "emergency" | "warning" | "success" | "info" | "muted";
-  icon: React.ReactNode;
-};
-
-function MetricCard({
-  label,
-  value,
-  subLabel,
-  variant,
-  icon,
-}: MetricCardProps) {
-  const styles = {
-    emergency: "border-red-500/20 bg-red-500/10",
-    warning: "border-amber-500/20 bg-amber-500/10",
-    success: "border-emerald-500/20 bg-emerald-500/10",
-    info: "border-blue-500/20 bg-blue-500/10",
-    muted: "border-white/10 bg-white/5",
-  };
-
-  const textStyles = {
-    emergency: "text-red-400",
-    warning: "text-amber-400",
-    success: "text-emerald-400",
-    info: "text-blue-400",
-    muted: "text-white/50",
-  };
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center rounded-xl border p-2",
-        styles[variant],
-      )}
-    >
-      <div className={cn("mb-1", textStyles[variant])}>{icon}</div>
-      <span
-        className={cn("text-xl font-bold leading-none", textStyles[variant])}
-      >
-        {value}
-      </span>
-      <span className="mt-0.5 text-[9px] font-medium uppercase tracking-wider text-white/40">
-        {label}
-      </span>
-      <span className="text-[8px] text-white/30">{subLabel}</span>
-    </div>
-  );
-}
-
-type EmptyStateProps = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-};
-
-function EmptyState({ icon, title, description }: EmptyStateProps) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="mb-3 text-white/20">{icon}</div>
-      <p className="text-sm font-medium text-white/50">{title}</p>
-      <p className="text-xs text-white/30">{description}</p>
     </div>
   );
 }

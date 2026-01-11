@@ -134,7 +134,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
     } catch (error) {
       console.error("Failed to fetch vehicle", error);
       toast.error(
-        formatErrorMessage("Erreur lors du chargement du vehicule.", error),
+        formatErrorMessage("Erreur lors du chargement du véhicule.", error),
       );
     } finally {
       setLoadingVehicle(false);
@@ -214,7 +214,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
   const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!vehicleEndpoint) {
-      toast.error("Configuration vehicule manquante.");
+      toast.error("Configuration véhicule manquante.");
       return;
     }
 
@@ -230,7 +230,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
         method: "PATCH",
         body: payload,
       });
-      toast.success("Vehicule mis a jour.");
+      toast.success("Véhicule mis a jour.");
       await fetchVehicle();
     } catch (error) {
       console.error("Failed to update vehicle", error);
@@ -299,7 +299,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
   if (!vehiclesResource) {
     return (
       <div className="text-sm text-muted-foreground">
-        Configuration vehicule indisponible.
+        Configuration véhicule indisponible.
       </div>
     );
   }
@@ -314,7 +314,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase text-muted-foreground">
-            Vehicule
+            Véhicule
           </p>
           <h2 className="text-lg font-semibold">{vehicleLabel}</h2>
         </div>
@@ -393,6 +393,7 @@ export function VehicleDetail({ vehicleId }: VehicleDetailProps) {
                         <Input
                           id={`vehicle-${field.key}`}
                           type={getInputType(field.type)}
+                          step={field.type === "number" ? "any" : undefined}
                           placeholder={
                             field.placeholder ??
                             (field.type === "datetime"

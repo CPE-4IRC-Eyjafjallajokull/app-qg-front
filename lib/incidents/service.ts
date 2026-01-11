@@ -132,7 +132,7 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
   }
 
   const title =
-    incident.address?.trim() || incident.city?.trim() || "Incident declare";
+    incident.address?.trim() || incident.city?.trim() || "Incident déclaré";
 
   // calculate severity based on priority of the first phase (piority 0 is highest, 1 is medium, 2 is low and more than 2 is very low)
   const severity: IncidentSeverity =

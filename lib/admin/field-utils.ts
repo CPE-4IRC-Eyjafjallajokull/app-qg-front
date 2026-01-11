@@ -110,8 +110,12 @@ export const formatValue = (value: unknown, type: FieldType = "text") => {
     return value ? "true" : "false";
   }
   if (type === "datetime" && typeof value === "string") {
-    // Convert ISO 8601 to datetime-local format (remove timezone)
-    return value.replace(/Z$/, "").replace(/\+\d{2}:\d{2}$/, "");
+    // Convert ISO 8601 to datetime-local format (remove timezone, trim micros)
+    const normalized = value
+      .replace(" ", "T")
+      .replace(/([+-]\d{2}:\d{2}|Z)$/, "")
+      .replace(/(\.\d{3})\d+$/, "$1");
+    return normalized;
   }
   return String(value);
 };
