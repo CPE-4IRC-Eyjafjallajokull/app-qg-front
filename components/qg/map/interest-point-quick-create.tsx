@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { MapPin, MapPinPlus, Tag } from "lucide-react";
+import { MapPin, MapPinPlus } from "lucide-react";
 import type { InterestPointCreatePayload, InterestPointKind } from "@/types/qg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,17 +147,16 @@ export function InterestPointQuickCreate({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-2">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-400">
-        <Tag className="h-3 w-3" />
-        <span>Nouveau point</span>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-2">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+        Creer un point d&apos;interet
+      </p>
       <div className="grid gap-2">
         <Input
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder={DEFAULT_NAME}
-          className="h-8 text-xs"
+          className="h-8 border-white/10 bg-white/5 text-xs text-white placeholder:text-white/30 hover:bg-white/10 focus:ring-white/20"
           disabled={isSubmitting}
         />
         <Select
@@ -165,30 +164,36 @@ export function InterestPointQuickCreate({
           onValueChange={setKindId}
           disabled={isSubmitting || interestPointKinds.length === 0}
         >
-          <SelectTrigger className="h-8 w-full text-xs">
+          <SelectTrigger className="h-8 w-full border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 focus:ring-white/20">
             <SelectValue
               placeholder={interestPointKinds.length ? "Type" : "Aucun type"}
               aria-label={kindLabel || "Type"}
             />
           </SelectTrigger>
-          <SelectContent align="start">
+          <SelectContent
+            align="start"
+            className="border-white/10 bg-black/90 backdrop-blur-xl"
+          >
             {interestPointKinds.map((kind) => (
               <SelectItem
                 key={kind.interest_point_kind_id}
                 value={kind.interest_point_kind_id}
+                className="text-white focus:bg-white/10 focus:text-white"
               >
                 {kind.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2 text-[11px] text-slate-400">
-          <MapPin className="h-3 w-3" />
+
+        {/* Adresse resolue */}
+        <div className="flex items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] text-white/50">
+          <MapPin className="h-3 w-3 shrink-0 text-white/40" />
           {isResolving ? (
-            <span className="h-3 w-32 animate-pulse rounded-full bg-slate-200/70" />
+            <span className="h-3 w-32 animate-pulse rounded-full bg-white/10" />
           ) : (
-            <span>
-              {compactAddress} · {resolvedAddress.zipcode}{" "}
+            <span className="truncate">
+              {compactAddress} - {resolvedAddress.zipcode}{" "}
               {resolvedAddress.city}
             </span>
           )}
@@ -197,11 +202,11 @@ export function InterestPointQuickCreate({
       <Button
         type="submit"
         size="sm"
-        className="h-8 justify-center gap-2 text-xs"
+        className="h-8 w-full justify-center gap-2 bg-gradient-to-r from-slate-600 to-slate-500 text-xs text-white shadow-lg hover:from-slate-500 hover:to-slate-400"
         disabled={isSubmitting || !kindId || interestPointKinds.length === 0}
       >
         <MapPinPlus className="h-3.5 w-3.5" />
-        Creer le point
+        {isSubmitting ? "Creation..." : "Creer le point"}
       </Button>
     </form>
   );

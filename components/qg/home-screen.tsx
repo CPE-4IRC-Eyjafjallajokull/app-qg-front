@@ -660,7 +660,7 @@ export function HomeScreen() {
   }, []);
 
   return (
-    <div className="relative h-screen w-screen bg-slate-950">
+    <div className="relative h-screen w-screen overflow-hidden bg-[#0a0a0f]">
       <MapView
         incidents={incidents}
         vehicles={vehicles}
@@ -686,15 +686,17 @@ export function HomeScreen() {
       </MapView>
 
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(59,130,246,0.15),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(16,185,129,0.12),transparent_35%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(220,38,38,0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.06),transparent_50%)]" />
 
-        <div className="absolute inset-x-4 top-4 z-20 sm:inset-x-6 sm:top-6">
+        <div className="absolute inset-x-4 top-4 z-20 sm:inset-x-6 sm:top-5">
           <div className="pointer-events-auto">
             <TopBar incidents={incidents} vehicles={vehicles} />
           </div>
         </div>
 
-        <div className="pointer-events-auto absolute bottom-24 right-4 top-[5.5rem] z-20 sm:bottom-6 sm:right-6 sm:top-28">
+        <div className="pointer-events-auto absolute bottom-24 right-4 top-20 z-20 sm:bottom-24 sm:right-5 sm:top-[5.5rem]">
           <SidePanel
             incidents={incidents}
             vehicles={vehicles}
@@ -706,11 +708,47 @@ export function HomeScreen() {
           />
         </div>
 
-        <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2">
+        <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 sm:bottom-6">
           <div className="pointer-events-auto">
             <CommandDock />
           </div>
         </div>
+
+        <div className="absolute bottom-5 left-4 z-20 hidden sm:left-5 lg:block">
+          <div className="pointer-events-auto">
+            <QuickStats />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickStats() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const dateString = now.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+
+  return (
+    <div className="flex items-end gap-3">
+      <div className="rounded-xl border border-white/10 bg-black/60 px-4 py-3 backdrop-blur-xl">
+        <p className="text-2xl font-bold tabular-nums text-white">
+          {timeString}
+        </p>
+        <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+          {dateString}
+        </p>
+      </div>
+      <div className="flex flex-col gap-1.5 text-[10px] font-medium text-white/30">
+        <span>Lyon Metropole</span>
+        <span>Secteur operationnel</span>
       </div>
     </div>
   );

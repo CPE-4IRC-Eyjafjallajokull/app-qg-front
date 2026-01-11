@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import Map, {
   type MapRef,
-  NavigationControl,
   type MapLayerMouseEvent,
 } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
@@ -96,7 +95,7 @@ export default function MapView({
   }, [focusLocation]);
 
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full">
       <Map
         ref={mapRef}
         mapLib={maplibregl}
@@ -123,9 +122,12 @@ export default function MapView({
         <IncidentMarkers incidents={incidents} />
         <VehicleLayer vehicles={vehicles} />
         {children}
-
-        <NavigationControl position="bottom-left" showCompass={false} />
       </Map>
+
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/15 to-transparent" />
+      </div>
     </div>
   );
 }

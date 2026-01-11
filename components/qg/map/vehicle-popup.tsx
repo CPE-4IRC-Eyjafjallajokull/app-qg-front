@@ -26,23 +26,28 @@ export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
         className="relative w-72"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-slate-200/80 bg-white/95 shadow-sm" />
-        <div className="relative rounded-2xl border border-slate-200/80 bg-white/95 shadow-lg backdrop-blur">
-          <div className="flex items-center justify-between px-3 py-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-              Véhicule
+        {/* Fleche indicatrice */}
+        <div className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-white/10 bg-black/85" />
+
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/85 shadow-2xl backdrop-blur-2xl">
+          {/* Header minimaliste */}
+          <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-white/40">
+              Vehicule
             </p>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
               aria-label="Fermer"
-              className="h-7 w-7"
+              className="h-6 w-6 text-white/50 hover:bg-white/10 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <VehicleCard vehicle={vehicle} className="pt-2" />
+
+          {/* Carte vehicule */}
+          <VehicleCard vehicle={vehicle} />
         </div>
       </div>
     </Popup>
