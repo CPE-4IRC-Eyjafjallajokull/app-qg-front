@@ -11,7 +11,7 @@ import type { InterestPointCreatePayload } from "@/types/qg";
 import { createInterestPoint } from "@/lib/interest-points/service";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/error-message";
-import type { AssignmentProposal, Incident, Vehicle } from "@/types/qg";
+import type { Incident, Vehicle } from "@/types/qg";
 import { useLiveEvent } from "@/hooks/useLiveEvent";
 import type { SSEEvent } from "@/lib/sse/types";
 import { reverseGeocode } from "@/lib/geocoding/service";
@@ -26,19 +26,12 @@ import {
   type IncidentDeclarationLocation,
 } from "@/lib/incidents/service";
 import { fetchVehicles, mapStatusLabelToKey } from "@/lib/vehicles/service";
-import {
-  fetchAssignmentProposals,
-  isPendingAssignmentProposal,
-  rejectAssignmentProposal,
-  validateAssignmentProposal,
-} from "@/lib/assignment-proposals/service";
 
 const SSE_FLUSH_MS = 100;
 export function HomeScreen() {
   const { interestPoints, interestPointKinds, refresh } = useInterestPoints();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [assignments, setAssignments] = useState<AssignmentProposal[]>([]);
   const [mapClickLocation, setMapClickLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -56,8 +49,6 @@ export function HomeScreen() {
   const incidentFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const vehicleStoreRef = useRef(new Map<string, Vehicle>());
   const vehicleFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const assignmentStoreRef = useRef(new Map<string, AssignmentProposal>());
-  const assignmentFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flushIncidents = useCallback(() => {
     incidentFlushRef.current = null;
@@ -231,69 +222,6 @@ export function HomeScreen() {
     [findVehicleInStore, applyVehicleUpdate],
   );
 
-  const flushAssignments = useCallback(() => {
-    assignmentFlushRef.current = null;
-    setAssignments(Array.from(assignmentStoreRef.current.values()));
-  }, []);
-
-  const scheduleAssignmentFlush = useCallback(() => {
-    if (assignmentFlushRef.current) {
-      return;
-    }
-    assignmentFlushRef.current = setTimeout(() => {
-      flushAssignments();
-    }, SSE_FLUSH_MS);
-  }, [flushAssignments]);
-
-  const applyAssignmentSnapshot = useCallback(
-    (items: AssignmentProposal[]) => {
-      const next = new Map<string, AssignmentProposal>();
-      items.filter(isPendingAssignmentProposal).forEach((assignment) => {
-        if (assignment.proposal_id) {
-          next.set(assignment.proposal_id, assignment);
-        }
-      });
-      assignmentStoreRef.current = next;
-      scheduleAssignmentFlush();
-    },
-    [scheduleAssignmentFlush],
-  );
-
-  const applyAssignmentUpdate = useCallback(
-    (assignment: AssignmentProposal) => {
-      if (!assignment.proposal_id) {
-        return;
-      }
-      const store = assignmentStoreRef.current;
-      if (!isPendingAssignmentProposal(assignment)) {
-        if (store.delete(assignment.proposal_id)) {
-          scheduleAssignmentFlush();
-        }
-        return;
-      }
-      const current = store.get(assignment.proposal_id);
-      store.set(
-        assignment.proposal_id,
-        current ? { ...current, ...assignment } : assignment,
-      );
-      scheduleAssignmentFlush();
-    },
-    [scheduleAssignmentFlush],
-  );
-
-  const removeAssignment = useCallback(
-    (proposalId: string) => {
-      if (!proposalId) {
-        return;
-      }
-      const store = assignmentStoreRef.current;
-      if (store.delete(proposalId)) {
-        scheduleAssignmentFlush();
-      }
-    },
-    [scheduleAssignmentFlush],
-  );
-
   const handleNewIncident = useCallback(
     (event: SSEEvent) => {
       const payload = event.data;
@@ -308,27 +236,6 @@ export function HomeScreen() {
       applyIncidentUpdate(incident);
     },
     [applyIncidentUpdate],
-  );
-
-  const handleAssignmentProposal = useCallback(
-    (event: SSEEvent) => {
-      const payload = event.data;
-      if (!payload || typeof payload !== "object") {
-        return;
-      }
-
-      const data = payload as Record<string, unknown>;
-      const proposal = toAssignmentProposal(
-        (data.assignment_proposal as unknown) ?? data,
-      );
-      if (!proposal) {
-        return;
-      }
-      applyAssignmentUpdate(proposal);
-
-      toast.success(`Nouvelle proposition d'affectation reçue.`);
-    },
-    [applyAssignmentUpdate],
   );
 
   const handleVehiclePositionUpdate = useCallback(
@@ -394,50 +301,7 @@ export function HomeScreen() {
     [applyIncidentUpdate],
   );
 
-  const handleValidateAssignment = useCallback(
-    async (proposalId: string) => {
-      if (!proposalId) {
-        return;
-      }
-      try {
-        await validateAssignmentProposal(proposalId);
-        removeAssignment(proposalId);
-        toast.success("Proposition d'affectation validée.");
-      } catch (error) {
-        toast.error(
-          formatErrorMessage(
-            "Erreur lors de la validation de la proposition d'affectation.",
-            error,
-          ),
-        );
-      }
-    },
-    [removeAssignment],
-  );
-
-  const handleRejectAssignment = useCallback(
-    async (proposalId: string) => {
-      if (!proposalId) {
-        return;
-      }
-      try {
-        await rejectAssignmentProposal(proposalId);
-        removeAssignment(proposalId);
-        toast.success("Proposition d'affectation refusée.");
-      } catch (error) {
-        toast.error(
-          formatErrorMessage(
-            "Erreur lors du refus de la proposition d'affectation.",
-            error,
-          ),
-        );
-      }
-    },
-    [removeAssignment],
-  );
-
   useLiveEvent("new_incident", handleNewIncident);
-  useLiveEvent("vehicle_assignment_proposal", handleAssignmentProposal);
   useLiveEvent("vehicle_position_update", handleVehiclePositionUpdate);
   useLiveEvent("vehicle_status_update", handleVehicleStatusUpdate);
   useLiveEvent("incident_status_update", handleIncidentStatusUpdate);
@@ -449,9 +313,6 @@ export function HomeScreen() {
       }
       if (vehicleFlushRef.current) {
         clearTimeout(vehicleFlushRef.current);
-      }
-      if (assignmentFlushRef.current) {
-        clearTimeout(assignmentFlushRef.current);
       }
     };
   }, []);
@@ -507,32 +368,6 @@ export function HomeScreen() {
       isActive = false;
     };
   }, [applyVehicleSnapshot]);
-
-  useEffect(() => {
-    let isActive = true;
-    const loadAssignments = async () => {
-      try {
-        const data = await fetchAssignmentProposals();
-        if (isActive) {
-          applyAssignmentSnapshot(data);
-        }
-      } catch (error) {
-        if (isActive) {
-          toast.error(
-            formatErrorMessage(
-              "Erreur lors du chargement des propositions d'affectation.",
-              error,
-            ),
-          );
-        }
-      }
-    };
-
-    loadAssignments();
-    return () => {
-      isActive = false;
-    };
-  }, [applyAssignmentSnapshot]);
 
   useEffect(() => {
     if (!mapClickLocation) {
@@ -708,9 +543,6 @@ export function HomeScreen() {
           <SidePanel
             incidents={incidents}
             vehicles={vehicles}
-            assignments={assignments}
-            onValidateAssignment={handleValidateAssignment}
-            onRejectAssignment={handleRejectAssignment}
             onFocusIncident={handleFocusIncident}
             onFocusVehicle={handleFocusVehicle}
           />
@@ -773,30 +605,6 @@ const toUiIncident = (value: unknown): Incident | null => {
 
   if ("incident_id" in value) {
     return mapIncidentToUi(value as ApiIncidentRead);
-  }
-
-  return null;
-};
-
-const toAssignmentProposal = (value: unknown): AssignmentProposal | null => {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const data = value as {
-    proposal_id?: unknown;
-    incident_id?: unknown;
-    proposals?: unknown;
-    validated_at?: unknown;
-    rejected_at?: unknown;
-  };
-
-  if (
-    typeof data.proposal_id === "string" &&
-    typeof data.incident_id === "string" &&
-    (Array.isArray(data.proposals) || data.validated_at || data.rejected_at)
-  ) {
-    return value as AssignmentProposal;
   }
 
   return null;

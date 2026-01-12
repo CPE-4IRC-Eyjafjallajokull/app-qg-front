@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type {
-  AssignmentProposal,
   Incident,
   IncidentSeverity,
   Vehicle,
@@ -25,15 +24,12 @@ import {
   ChevronRight,
   Radio,
   Truck,
-  Users,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLiveEvents } from "@/components/live-events-provider";
-import { useResolver } from "@/components/resolver-provider";
 import { IncidentCard } from "./cards/incident-card";
 import { VehicleCard } from "./cards/vehicle-card";
-import { AssignmentCard } from "./cards/assignment-card";
 import { EmptyState } from "./side-panel/empty-state";
 import { FiltersPanel } from "./side-panel/filters-panel";
 import { MetricCard } from "./side-panel/metric-card";
@@ -42,9 +38,6 @@ import { MiniCounter } from "./side-panel/mini-counter";
 type SidePanelProps = {
   incidents: Incident[];
   vehicles: Vehicle[];
-  assignments: AssignmentProposal[];
-  onValidateAssignment?: (assignmentId: string) => void;
-  onRejectAssignment?: (assignmentId: string) => void;
   onFocusIncident?: (incident: Incident) => void;
   onFocusVehicle?: (vehicle: Vehicle) => void;
 };
@@ -52,9 +45,6 @@ type SidePanelProps = {
 export function SidePanel({
   incidents,
   vehicles,
-  assignments,
-  onValidateAssignment,
-  onRejectAssignment,
   onFocusIncident,
   onFocusVehicle,
 }: SidePanelProps) {
@@ -71,11 +61,7 @@ export function SidePanel({
     VehicleStatus | "all"
   >("all");
   const [vehicleType, setVehicleType] = useState<VehicleType | "all">("all");
-  const [assignmentStatus, setAssignmentStatus] = useState<
-    "all" | "pending" | "validated" | "rejected"
-  >("all");
   const { isConnected } = useLiveEvents();
-  const { resolve } = useResolver();
 
   const activeIncidents = incidents.filter((incident) =>
     ["new", "assigned"].includes(incident.status),
@@ -141,27 +127,6 @@ export function SidePanel({
     vehicleAvailability !== "all" ||
     vehicleType !== "all";
 
-  const filteredAssignments = assignments.filter((assignment) => {
-    if (assignmentStatus === "validated" && !assignment.validated_at) {
-      return false;
-    }
-    if (assignmentStatus === "rejected" && !assignment.rejected_at) {
-      return false;
-    }
-    if (
-      assignmentStatus === "pending" &&
-      (assignment.validated_at || assignment.rejected_at)
-    ) {
-      return false;
-    }
-
-    return (
-      assignment.proposal_id.toLowerCase() ||
-      assignment.incident_id.toLowerCase()
-    );
-  });
-  const isAssignmentFiltered = assignmentStatus !== "all";
-
   if (isCollapsed) {
     return (
       <div className="flex h-full flex-col items-center rounded-2xl border border-white/10 bg-black/60 py-4 backdrop-blur-xl transition-all duration-300 w-14">
@@ -195,12 +160,6 @@ export function SidePanel({
               variant="success"
               icon={<Truck className="h-3.5 w-3.5" />}
               title={`${availableVehicles.length} véhicule(s) disponible(s)`}
-            />
-            <MiniCounter
-              count={assignments.length}
-              variant={assignments.length > 0 ? "info" : "muted"}
-              icon={<Users className="h-3.5 w-3.5" />}
-              title={`${assignments.length} affectation(s)`}
             />
           </div>
         </div>
@@ -277,7 +236,7 @@ export function SidePanel({
       </div>
 
       <Tabs defaultValue="incidents" className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="mx-3 mt-2 grid w-auto grid-cols-3 rounded-lg border border-white/10 bg-white/5 p-1">
+        <TabsList className="mx-3 mt-2 grid w-auto grid-cols-2 rounded-lg border border-white/10 bg-white/5 p-1">
           <TabsTrigger
             value="incidents"
             className="text-[11px] text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
@@ -289,17 +248,6 @@ export function SidePanel({
             className="text-[11px] text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
           >
             Flotte
-          </TabsTrigger>
-          <TabsTrigger
-            value="assignments"
-            className="relative text-[11px] text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
-          >
-            Affect.
-            {assignments.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                {assignments.length}
-              </span>
-            )}
           </TabsTrigger>
         </TabsList>
 
@@ -457,61 +405,6 @@ export function SidePanel({
                     key={vehicle.id}
                     vehicle={vehicle}
                     onFocus={onFocusVehicle}
-                  />
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent
-          value="assignments"
-          className="flex min-h-0 flex-1 flex-col px-2"
-        >
-          <FiltersPanel>
-            <Select
-              value={assignmentStatus}
-              onValueChange={(value) =>
-                setAssignmentStatus(
-                  value as "all" | "pending" | "validated" | "rejected",
-                )
-              }
-            >
-              <SelectTrigger className="h-8 border-white/10 bg-white/10 text-xs text-white hover:bg-white/15">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
-                <SelectItem value="validated">Validées</SelectItem>
-                <SelectItem value="rejected">Rejetées</SelectItem>
-              </SelectContent>
-            </Select>
-          </FiltersPanel>
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="space-y-1.5 pb-2 pr-2">
-              {filteredAssignments.length === 0 ? (
-                <EmptyState
-                  icon={<Users className="h-8 w-8" />}
-                  title={
-                    isAssignmentFiltered
-                      ? "Aucun resultat"
-                      : "Aucune affectation"
-                  }
-                  description={
-                    isAssignmentFiltered
-                      ? "Ajustez vos filtres pour elargir la recherche"
-                      : "Aucune proposition en attente"
-                  }
-                />
-              ) : (
-                filteredAssignments.map((assignment) => (
-                  <AssignmentCard
-                    key={`${assignment.proposal_id}-${assignment.generated_at}`}
-                    assignment={assignment}
-                    resolve={resolve}
-                    onValidate={onValidateAssignment}
-                    onReject={onRejectAssignment}
                   />
                 ))
               )}
