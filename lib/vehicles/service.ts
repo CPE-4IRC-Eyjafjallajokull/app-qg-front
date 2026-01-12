@@ -78,6 +78,36 @@ export async function fetchVehicles(): Promise<Vehicle[]> {
     .filter((item): item is Vehicle => Boolean(item));
 }
 
+export type VehicleTypeMapping = Record<string, string>;
+
+export async function fetchVehicleTypeMapping(): Promise<VehicleTypeMapping> {
+  const response = await fetchWithAuth("/api/vehicles", {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  const parsedBody = await parseResponseBody(response);
+
+  if (!response.ok) {
+    return {};
+  }
+
+  const data = parsedBody.json as ApiVehiclesListRead;
+
+  if (!Array.isArray(data.vehicles)) {
+    return {};
+  }
+
+  const mapping: VehicleTypeMapping = {};
+  for (const vehicle of data.vehicles) {
+    if (vehicle.vehicle_type?.vehicle_type_id && vehicle.vehicle_type?.code) {
+      mapping[vehicle.vehicle_type.vehicle_type_id] = vehicle.vehicle_type.code;
+    }
+  }
+  return mapping;
+}
+
 const statusLabelMap: Record<string, Vehicle["status"]> = {
   disponible: "available",
   engagé: "engaged",

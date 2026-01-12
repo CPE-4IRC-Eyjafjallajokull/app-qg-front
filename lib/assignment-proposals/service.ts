@@ -52,6 +52,33 @@ export async function fetchAssignmentProposals(): Promise<
     .filter(isPendingAssignmentProposal);
 }
 
+export async function fetchAssignmentProposalsAll(): Promise<
+  AssignmentProposal[]
+> {
+  const response = await fetchWithAuth("/api/assignment-proposals", {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  const parsedBody = await parseResponseBody(response);
+
+  if (!response.ok) {
+    const message = getErrorMessage(response, parsedBody);
+    throw new Error(String(message));
+  }
+
+  const data = parsedBody.json as AssignmentProposalsResponse | null;
+
+  if (!data || !Array.isArray(data.assignment_proposals)) {
+    return [];
+  }
+
+  return data.assignment_proposals.map((proposal) =>
+    mapAssignmentProposalToUi(proposal),
+  );
+}
+
 export async function fetchAssignmentProposal(
   proposalId: string,
 ): Promise<AssignmentProposal> {

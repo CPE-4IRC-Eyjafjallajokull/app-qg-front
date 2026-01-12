@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Radio, Settings, Shield, Truck, Zap } from "lucide-react";
+import {
+  BarChart3,
+  LogOut,
+  Radio,
+  Settings,
+  Shield,
+  Truck,
+  Zap,
+} from "lucide-react";
 import type { Incident, Vehicle } from "@/types/qg";
 import { cn } from "@/lib/utils";
 import { useLiveEvents } from "@/components/live-events-provider";
@@ -97,6 +105,17 @@ export function TopBar({ incidents, vehicles }: TopBarProps) {
 
       <div className="flex items-center gap-2">
         <div className="hidden items-center gap-1.5 lg:flex">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-9 border border-white/10 bg-black/40 text-white/70 backdrop-blur-xl hover:bg-white/10 hover:text-white"
+          >
+            <Link href="/metrics" className="flex items-center gap-1.5">
+              <BarChart3 className="h-4 w-4" />
+              Metrics
+            </Link>
+          </Button>
           <Button
             asChild
             variant="ghost"

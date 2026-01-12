@@ -48,9 +48,9 @@ const severityConfig: Record<
   medium: {
     label: "Moyenne",
     markerClassName:
-      "bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-orange-400/40 shadow-lg ring-2 ring-orange-300/50",
-    badgeClassName: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-    headerClassName: "bg-gradient-to-r from-orange-500 to-orange-400",
+      "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/40 shadow-lg ring-2 ring-blue-400/50",
+    badgeClassName: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+    headerClassName: "bg-gradient-to-r from-blue-500 to-blue-400",
     icon: AlertCircle,
     pulse: false,
   },

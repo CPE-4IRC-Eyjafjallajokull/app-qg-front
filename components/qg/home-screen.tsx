@@ -15,7 +15,7 @@ import type { AssignmentProposal, Incident, Vehicle } from "@/types/qg";
 import { useLiveEvent } from "@/hooks/useLiveEvent";
 import type { SSEEvent } from "@/lib/sse/types";
 import { reverseGeocode } from "@/lib/geocoding/service";
-import { MAP_MAX_ZOOM } from "@/lib/map/config";
+import { LYON_CENTER, MAP_DEFAULT_ZOOM, MAP_MAX_ZOOM } from "@/lib/map/config";
 import {
   declareIncident,
   fetchIncidents,
@@ -659,6 +659,14 @@ export function HomeScreen() {
     });
   }, []);
 
+  const handleRecenterMap = useCallback(() => {
+    setMapFocusLocation({
+      latitude: LYON_CENTER.lat,
+      longitude: LYON_CENTER.lng,
+      zoom: MAP_DEFAULT_ZOOM,
+    });
+  }, []);
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#0a0a0f]">
       <MapView
@@ -710,7 +718,7 @@ export function HomeScreen() {
 
         <div className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 sm:bottom-6">
           <div className="pointer-events-auto">
-            <CommandDock />
+            <CommandDock onRecenter={handleRecenterMap} />
           </div>
         </div>
 

@@ -24,6 +24,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.556.0",
     "maplibre-gl": "^4.7.1",
     "next": "^16.0.9",
@@ -32,6 +33,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-map-gl": "^7.1.7",
+    "recharts": "^2.12.7",
     "sonner": "^2.0.7",
     "swr": "^2.3.8",
     "tailwind-merge": "^3.4.0"

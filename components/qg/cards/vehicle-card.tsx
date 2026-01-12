@@ -2,6 +2,8 @@
 
 import type { Vehicle } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { VehicleAssignmentDialog } from "@/components/qg/cards/vehicle-assignment-dialog";
 import {
   Collapsible,
   CollapsibleContent,
@@ -10,6 +12,7 @@ import {
 import {
   ChevronDown,
   Clock,
+  Link2,
   LocateFixed,
   Users,
   Warehouse,
@@ -107,70 +110,84 @@ export function VehicleCard({
           status.border,
         )}
       >
-        <CollapsibleTrigger className="flex w-full items-center gap-2.5 p-2.5 text-left">
-          <div
-            className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-              status.bg,
-            )}
-          >
-            <Image
-              src={getVehicleImagePath(vehicle.type)}
-              alt={vehicle.type}
-              width={32}
-              height={32}
-              className="object-cover"
-            />
-          </div>
-
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium text-white">
-              {vehicle.callSign}
-            </p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <Badge
-                variant="outline"
+        <div className="flex w-full items-center gap-2.5 p-2.5">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+            >
+              <div
                 className={cn(
-                  "h-4 gap-1 px-1.5 text-[9px]",
+                  "flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg",
                   status.bg,
-                  status.text,
-                  status.border,
                 )}
               >
-                <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
-                {status.label}
-              </Badge>
-              <span className="truncate text-[10px] text-white/40">
-                {vehicle.type}
-              </span>
-            </div>
-          </div>
+                <Image
+                  src={getVehicleImagePath(vehicle.type)}
+                  alt={vehicle.type}
+                  width={32}
+                  height={32}
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <p className="truncate text-sm font-medium text-white">
+                  {vehicle.callSign}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-4 gap-1 px-1.5 text-[9px]",
+                      status.bg,
+                      status.text,
+                      status.border,
+                    )}
+                  >
+                    <span
+                      className={cn("h-1.5 w-1.5 rounded-full", status.dot)}
+                    />
+                    {status.label}
+                  </Badge>
+                  <span className="truncate text-[10px] text-white/40">
+                    {vehicle.type}
+                  </span>
+                </div>
+              </div>
+              <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+            </button>
+          </CollapsibleTrigger>
 
           <div className="flex items-center gap-1">
-            <div
-              role="button"
-              tabIndex={0}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white/40 hover:bg-white/10 hover:text-white"
+            <VehicleAssignmentDialog
+              vehicle={vehicle}
+              trigger={
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-white/40 hover:bg-white/10 hover:text-white"
+                  title="Assigner le vehicule"
+                  aria-label="Assigner le vehicule"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                </Button>
+              }
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-white/40 hover:bg-white/10 hover:text-white"
               title="Centrer sur le véhicule"
               aria-label="Centrer sur le véhicule"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onFocus?.(vehicle);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onFocus?.(vehicle);
-                }
-              }}
+              onClick={() => onFocus?.(vehicle)}
             >
               <LocateFixed className="h-3.5 w-3.5" />
-            </div>
-            <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+            </Button>
           </div>
-        </CollapsibleTrigger>
+        </div>
 
         <CollapsibleContent>
           <div className="space-y-1.5 border-t border-white/10 px-2.5 pb-2.5 pt-2.5">

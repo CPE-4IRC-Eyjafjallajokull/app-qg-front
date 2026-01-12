@@ -150,7 +150,7 @@ export function IncidentCard({
           </div>
 
           <div className="min-w-0 flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-medium text-white whitespace-normal">
               {incident.title}
             </p>
             <div className="mt-0.5 flex items-center gap-1.5">
