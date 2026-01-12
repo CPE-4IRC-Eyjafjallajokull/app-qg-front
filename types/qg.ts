@@ -14,7 +14,13 @@ export type Incident = {
   status: IncidentStatus;
   location: GeoPoint;
   reportedAt: string;
-  phases: string[];
+  phases: IncidentPhase[];
+};
+
+export type IncidentPhase = {
+  id: string;
+  code: string;
+  label: string;
 };
 
 export type AssignmentProposalItem = {
