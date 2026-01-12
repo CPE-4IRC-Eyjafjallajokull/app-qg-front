@@ -32,7 +32,7 @@ export function VehicleItemCompact({
     vehicle_type?: { code?: string; label?: string };
   } | null;
 
-  const vehicleImmat = vehicle?.immatriculation || `Vehicule ${index + 1}`;
+  const vehicleImmat = vehicle?.immatriculation || `Véhicule ${index + 1}`;
   const vehicleTypeCode = vehicle?.vehicle_type?.code || "VTU";
 
   const isAssignment = item.type === "assignment";
@@ -77,11 +77,11 @@ export function VehicleItemCompact({
             <Route className="h-3 w-3 text-blue-400" />
             {item.data.distance_km.toFixed(1)}km
           </span>
-          <span className="flex items-center gap-0.5" title="Temps estime">
+          <span className="flex items-center gap-0.5" title="Temps estimé">
             <Clock className="h-3 w-3 text-purple-400" />
             {item.data.estimated_time_min.toFixed(0)}min
           </span>
-          <span className="flex items-center gap-0.5" title="Niveau energie">
+          <span className="flex items-center gap-0.5" title="Niveau énergie">
             <Fuel className="h-3 w-3 text-amber-400" />
             {(item.data.energy_level * 100).toFixed(0)}%
           </span>
@@ -90,12 +90,12 @@ export function VehicleItemCompact({
         <div className="flex items-center gap-1.5 text-[10px]">
           {isUnassigned ? (
             <span className="flex items-center gap-1 text-red-400/70">
-              Desaffecte
+              Désaffecté
             </span>
           ) : isValidated ? (
             <span className="flex items-center gap-1 text-emerald-400">
               <CheckCircle2 className="h-3 w-3" />
-              Valide
+              Assigné
             </span>
           ) : (
             <span className="flex items-center gap-1 text-amber-400">

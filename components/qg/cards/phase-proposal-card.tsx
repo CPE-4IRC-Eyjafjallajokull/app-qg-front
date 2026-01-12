@@ -32,6 +32,7 @@ type PhaseProposalCardProps = {
   proposal: AssignmentProposal | null;
   proposalItems: AssignmentProposalItem[];
   vehicleAssignments: VehicleAssignment[];
+  phaseEndedAt?: string | null;
   resolve: (type: ResolverType, id: string) => Record<string, unknown> | null;
   onValidate?: (proposalId: string) => Promise<void>;
   onReject?: (proposalId: string) => Promise<void>;
@@ -46,6 +47,7 @@ export function PhaseProposalCard({
   proposal,
   proposalItems,
   vehicleAssignments,
+  phaseEndedAt,
   resolve,
   onValidate,
   onReject,
@@ -78,6 +80,33 @@ export function PhaseProposalCard({
   const isPending = proposal && !proposal.validated_at && !proposal.rejected_at;
   const isValidated = proposal?.validated_at;
   const isRejected = proposal?.rejected_at;
+  const isPhaseEnded = Boolean(phaseEndedAt);
+
+  if (isPhaseEnded) {
+    return (
+      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/5 px-2 py-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10">
+            <Layers className="h-3.5 w-3.5 text-white/40" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-white whitespace-normal">
+              {phaseLabel}
+            </p>
+            {phaseCode && (
+              <p className="truncate text-[10px] text-white/40">{phaseCode}</p>
+            )}
+          </div>
+          <Badge
+            variant="outline"
+            className="border-white/20 bg-white/5 text-[9px] text-white/40"
+          >
+            Fini
+          </Badge>
+        </div>
+      </div>
+    );
+  }
 
   const handleValidate = async () => {
     if (!proposal || !onValidate || isValidating) return;
@@ -134,7 +163,7 @@ export function PhaseProposalCard({
           variant="outline"
           className="border-emerald-500/30 bg-emerald-500/20 text-[9px] text-emerald-400"
         >
-          {activeAssignments.length} affecte
+          {activeAssignments.length} affecté
           {activeAssignments.length > 1 ? "s" : ""}
         </Badge>
       );
@@ -145,7 +174,7 @@ export function PhaseProposalCard({
           variant="outline"
           className="border-emerald-500/30 bg-emerald-500/20 text-[9px] text-emerald-400"
         >
-          Valide
+          Validé
         </Badge>
       );
     }
@@ -155,7 +184,7 @@ export function PhaseProposalCard({
           variant="outline"
           className="border-red-500/30 bg-red-500/20 text-[9px] text-red-400"
         >
-          Refuse
+          Refusé
         </Badge>
       );
     }
@@ -165,7 +194,7 @@ export function PhaseProposalCard({
           variant="outline"
           className="border-blue-500/30 bg-blue-500/20 text-[9px] text-blue-400"
         >
-          {proposalItems.length} vehicule{proposalItems.length > 1 ? "s" : ""}
+          {proposalItems.length} véhicule{proposalItems.length > 1 ? "s" : ""}
         </Badge>
       );
     }
@@ -352,7 +381,7 @@ export function PhaseProposalCard({
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
                 <span className="text-[10px] font-medium">
-                  Demander assignation
+                  Demander une affectation
                 </span>
               </Button>
             </div>

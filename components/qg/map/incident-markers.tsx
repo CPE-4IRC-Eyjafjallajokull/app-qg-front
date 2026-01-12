@@ -1,10 +1,15 @@
 import { AlertTriangle, Flame, AlertCircle, Info } from "lucide-react";
-import type { Incident } from "@/types/qg";
+import type { Incident, ProposalsByIncident } from "@/types/qg";
 import { MarkerWithPopover } from "@/components/qg/map/marker-with-popover";
 import { IncidentMarkerPopoverContent } from "@/components/qg/map/incident-marker-popover-content";
 
 type IncidentMarkersProps = {
   incidents: Incident[];
+  proposalsByIncident: ProposalsByIncident;
+  onProposalStatusChange: (
+    proposalId: string,
+    update: { validated_at?: string | null; rejected_at?: string | null },
+  ) => void;
 };
 
 const severityConfig: Record<
@@ -41,12 +46,17 @@ const severityConfig: Record<
   },
 };
 
-export function IncidentMarkers({ incidents }: IncidentMarkersProps) {
+export function IncidentMarkers({
+  incidents,
+  proposalsByIncident,
+  onProposalStatusChange,
+}: IncidentMarkersProps) {
   return (
     <>
       {incidents.map((incident) => {
         const config = severityConfig[incident.severity];
         const IconComponent = config.icon;
+        const proposals = proposalsByIncident.get(incident.id) ?? [];
 
         return (
           <MarkerWithPopover
@@ -60,7 +70,11 @@ export function IncidentMarkers({ incidents }: IncidentMarkersProps) {
             pulse={config.pulse}
             size={incident.severity === "critical" ? "lg" : "md"}
           >
-            <IncidentMarkerPopoverContent incident={incident} />
+            <IncidentMarkerPopoverContent
+              incident={incident}
+              proposals={proposals}
+              onProposalStatusChange={onProposalStatusChange}
+            />
           </MarkerWithPopover>
         );
       })}

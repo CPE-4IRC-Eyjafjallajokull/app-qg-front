@@ -10,6 +10,7 @@ import type {
   Incident,
   InterestPoint,
   InterestPointKind,
+  ProposalsByIncident,
   Vehicle,
 } from "@/types/qg";
 import {
@@ -32,6 +33,11 @@ type MapViewProps = {
   vehicles: Vehicle[];
   interestPoints?: InterestPoint[];
   interestPointKinds?: InterestPointKind[];
+  proposalsByIncident: ProposalsByIncident;
+  onProposalStatusChange: (
+    proposalId: string,
+    update: { validated_at?: string | null; rejected_at?: string | null },
+  ) => void;
   focusLocation?: { latitude: number; longitude: number; zoom?: number } | null;
   onMapClick?: (location: { latitude: number; longitude: number }) => void;
   children?: ReactNode;
@@ -42,6 +48,8 @@ export default function MapView({
   vehicles,
   interestPoints = [],
   interestPointKinds = [],
+  proposalsByIncident,
+  onProposalStatusChange,
   focusLocation = null,
   onMapClick,
   children,
@@ -119,8 +127,12 @@ export default function MapView({
           interestPoints={interestPoints}
           interestPointKinds={interestPointKinds}
         />
-        <IncidentMarkers incidents={incidents} />
-        <VehicleLayer vehicles={vehicles} />
+        <IncidentMarkers
+          incidents={incidents}
+          proposalsByIncident={proposalsByIncident}
+          onProposalStatusChange={onProposalStatusChange}
+        />
+        <VehicleLayer vehicles={vehicles} incidents={incidents} />
         {children}
       </Map>
 

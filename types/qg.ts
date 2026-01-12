@@ -12,6 +12,7 @@ export type Incident = {
   description: string;
   severity: IncidentSeverity;
   status: IncidentStatus;
+  endedAt?: string | null;
   location: GeoPoint;
   reportedAt: string;
   phases: IncidentPhase[];
@@ -30,6 +31,8 @@ export type IncidentPhase = {
   id: string;
   code: string;
   label: string;
+  startedAt?: string | null;
+  endedAt?: string | null;
   vehicleAssignments: VehicleAssignment[];
 };
 
@@ -139,3 +142,6 @@ export type IncidentPhaseWithProposals = {
   proposal: AssignmentProposal | null;
   proposalItems: AssignmentProposalItem[];
 };
+
+// Map of incidentId -> proposals for that incident
+export type ProposalsByIncident = Map<string, AssignmentProposal[]>;

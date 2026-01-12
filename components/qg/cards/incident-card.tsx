@@ -1,14 +1,8 @@
 "use client";
 
-import type {
-  AssignmentProposal,
-  AssignmentProposalItem,
-  AssignmentProposalMissing,
-  Incident,
-  VehicleAssignment,
-} from "@/types/qg";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import type { AssignmentProposal, Incident } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +16,7 @@ import {
   LoaderCircle,
   LocateFixed,
   MapPin,
+  Plus,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,111 +26,35 @@ import {
   requestPhaseAssignmentProposal,
   validateAssignmentProposal,
   rejectAssignmentProposal,
-  fetchAssignmentProposals,
 } from "@/lib/assignment-proposals/service";
-import { useLiveEvents } from "@/components/live-events-provider";
 import { useResolver } from "@/components/resolver-provider";
+import { IncidentPhaseDialog } from "@/components/qg/cards/incident-phase-dialog";
 import { PhaseProposalCard } from "./phase-proposal-card";
+import {
+  buildPhaseProposalState,
+  formatIncidentDate,
+  severityConfig,
+  statusConfig,
+  type PhaseProposalState,
+} from "./incident-card-utils";
 
-const severityConfig: Record<
-  Incident["severity"],
-  {
-    label: string;
-    bg: string;
-    text: string;
-    border: string;
-    dot: string;
-  }
-> = {
-  critical: {
-    label: "Critique",
-    bg: "bg-red-500/20",
-    text: "text-red-400",
-    border: "border-red-500/30",
-    dot: "bg-red-500",
-  },
-  high: {
-    label: "Elevee",
-    bg: "bg-amber-500/20",
-    text: "text-amber-400",
-    border: "border-amber-500/30",
-    dot: "bg-amber-500",
-  },
-  medium: {
-    label: "Moyenne",
-    bg: "bg-orange-500/20",
-    text: "text-orange-400",
-    border: "border-orange-500/30",
-    dot: "bg-orange-500",
-  },
-  low: {
-    label: "Faible",
-    bg: "bg-emerald-500/20",
-    text: "text-emerald-400",
-    border: "border-emerald-500/30",
-    dot: "bg-emerald-500",
-  },
-};
-
-const statusConfig: Record<
-  Incident["status"],
-  { label: string; className: string }
-> = {
-  new: {
-    label: "Nouveau",
-    className: "bg-red-500/20 text-red-400 border-red-500/30",
-  },
-  assigned: {
-    label: "Assigne",
-    className: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  },
-  resolved: {
-    label: "Resolu",
-    className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  },
-};
-
-const formatDate = (dateString: string) => {
-  try {
-    return new Intl.DateTimeFormat("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(dateString));
-  } catch {
-    return dateString;
-  }
-};
-
-type PhaseProposalState = {
-  phaseId: string;
-  phaseCode: string;
-  proposal: AssignmentProposal | null;
-  proposalItems: AssignmentProposalItem[];
-  vehicleAssignments: VehicleAssignment[];
+type IncidentCardProps = {
+  incident: Incident;
+  proposals: AssignmentProposal[];
+  onProposalStatusChange: (
+    proposalId: string,
+    update: { validated_at?: string | null; rejected_at?: string | null },
+  ) => void;
+  onFocus?: (incident: Incident) => void;
 };
 
 export function IncidentCard({
   incident,
+  proposals,
+  onProposalStatusChange,
   onFocus,
-}: {
-  incident: Incident;
-  onFocus?: (incident: Incident) => void;
-}) {
+}: IncidentCardProps) {
   const [isRequesting, setIsRequesting] = useState(false);
-  const [phaseProposals, setPhaseProposals] = useState<PhaseProposalState[]>(
-    () =>
-      incident.phases.map((phase) => ({
-        phaseId: phase.id,
-        phaseCode: phase.code,
-        proposal: null,
-        proposalItems: [],
-        vehicleAssignments: phase.vehicleAssignments ?? [],
-      })),
-  );
-
-  console.log(`Phase proposals state:`, phaseProposals);
-
-  const { onEvent } = useLiveEvents();
   const { resolve } = useResolver();
 
   const severity = severityConfig[incident.severity];
@@ -143,150 +62,15 @@ export function IncidentCard({
   const isIncidentResolved = incident.status === "resolved";
   const isActionDisabled = isRequesting || isIncidentResolved;
 
-  // Listen for vehicle assignments via SSE
-  useEffect(() => {
-    const unsubscribe = onEvent("vehicle_assignment", (event) => {
-      const data = event.data as {
-        incident_id: string;
-        vehicle_assignment_id: string;
-        vehicle_id: string;
-        incident_phase_id: string;
-        assigned_at: string;
-        assigned_by_operator_id?: string | null;
-        validated_at?: string | null;
-        validated_by_operator_id?: string | null;
-        unassigned_at?: string | null;
-      };
-
-      if (data.incident_id !== incident.id) {
-        return;
-      }
-
-      const newAssignment: VehicleAssignment = {
-        id: data.vehicle_assignment_id,
-        vehicleId: data.vehicle_id,
-        phaseId: data.incident_phase_id,
-        assignedAt: data.assigned_at,
-        validatedAt: data.validated_at ?? null,
-        unassignedAt: data.unassigned_at ?? null,
-      };
-
-      setPhaseProposals((prev) => {
-        return prev.map((phase) => {
-          if (phase.phaseId !== data.incident_phase_id) {
-            return phase;
-          }
-
-          // Check if assignment already exists (update) or is new (add)
-          const existingIndex = phase.vehicleAssignments.findIndex(
-            (a) => a.id === newAssignment.id,
-          );
-
-          if (existingIndex !== -1) {
-            // Update existing assignment
-            const updatedAssignments = [...phase.vehicleAssignments];
-            updatedAssignments[existingIndex] = newAssignment;
-            return { ...phase, vehicleAssignments: updatedAssignments };
-          } else {
-            // Add new assignment
-            return {
-              ...phase,
-              vehicleAssignments: [...phase.vehicleAssignments, newAssignment],
-            };
-          }
-        });
-      });
-    });
-
-    return unsubscribe;
-  }, [incident.id, onEvent]);
-
-  const updatePhaseProposalsFromAssignments = useCallback(
-    (proposals: AssignmentProposal[]) => {
-      setPhaseProposals((prev) => {
-        const updated = [...prev];
-
-        for (const proposal of proposals) {
-          // Group proposal items by phase
-          const itemsByPhase = new Map<string, AssignmentProposalItem[]>();
-
-          for (const item of proposal.vehicles_to_send) {
-            const existing = itemsByPhase.get(item.incident_phase_id) || [];
-            existing.push(item);
-            itemsByPhase.set(item.incident_phase_id, existing);
-          }
-
-          // Update each phase with its proposals
-          for (const [phaseId, items] of itemsByPhase) {
-            const phaseIndex = updated.findIndex((p) => p.phaseId === phaseId);
-            if (phaseIndex !== -1) {
-              // Sort items by score (highest first)
-              const sortedItems = [...items].sort((a, b) => b.score - a.score);
-              updated[phaseIndex] = {
-                ...updated[phaseIndex],
-                proposal,
-                proposalItems: sortedItems,
-              };
-            }
-          }
-        }
-
-        return updated;
-      });
-    },
-    [],
+  // Compute phase proposals from incident.phases and proposals prop
+  const phaseProposals = useMemo<PhaseProposalState[]>(
+    () => buildPhaseProposalState(incident.phases, proposals),
+    [incident.phases, proposals],
   );
 
-  // Fetch existing proposals for this incident on mount
-  useEffect(() => {
-    const loadProposals = async () => {
-      try {
-        const proposals = await fetchAssignmentProposals();
-        const incidentProposals = proposals.filter(
-          (p) => p.incident_id === incident.id,
-        );
-
-        if (incidentProposals.length > 0) {
-          updatePhaseProposalsFromAssignments(incidentProposals);
-        }
-      } catch {
-        // Silently fail - proposals will load via SSE
-      }
-    };
-
-    loadProposals();
-  }, [incident.id, updatePhaseProposalsFromAssignments]);
-
-  // Listen for new assignment proposals via SSE
-  useEffect(() => {
-    const unsubscribe = onEvent("assignment_proposal", (event) => {
-      const data = event.data as {
-        proposal_id: string;
-        incident_id: string;
-        generated_at: string;
-        vehicles_to_send: AssignmentProposalItem[];
-        missing: AssignmentProposalMissing[];
-      };
-
-      if (data.incident_id !== incident.id) {
-        return;
-      }
-
-      const newProposal: AssignmentProposal = {
-        proposal_id: data.proposal_id,
-        incident_id: data.incident_id,
-        generated_at: data.generated_at,
-        vehicles_to_send: data.vehicles_to_send,
-        missing: data.missing,
-        validated_at: null,
-        rejected_at: null,
-      };
-
-      updatePhaseProposalsFromAssignments([newProposal]);
-    });
-
-    return unsubscribe;
-  }, [incident.id, onEvent, updatePhaseProposalsFromAssignments]);
+  const hasPendingProposals = phaseProposals.some(
+    (p) => p.proposal && !p.proposal.validated_at && !p.proposal.rejected_at,
+  );
 
   const handleRequestAssignment = async () => {
     if (!incident.id) {
@@ -312,21 +96,9 @@ export function IncidentCard({
     try {
       await validateAssignmentProposal(proposalId);
       toast.success("Proposition validee.");
-
-      // Update local state
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? {
-                ...p,
-                proposal: {
-                  ...p.proposal,
-                  validated_at: new Date().toISOString(),
-                },
-              }
-            : p,
-        ),
-      );
+      onProposalStatusChange(proposalId, {
+        validated_at: new Date().toISOString(),
+      });
     } catch (error) {
       toast.error(formatErrorMessage("Erreur lors de la validation.", error));
     }
@@ -336,15 +108,9 @@ export function IncidentCard({
     try {
       await rejectAssignmentProposal(proposalId);
       toast.success("Proposition refusee.");
-
-      // Clear proposal from local state to allow requesting a new one
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? { ...p, proposal: null, proposalItems: [] }
-            : p,
-        ),
-      );
+      onProposalStatusChange(proposalId, {
+        rejected_at: new Date().toISOString(),
+      });
     } catch (error) {
       toast.error(formatErrorMessage("Erreur lors du refus.", error));
     }
@@ -352,19 +118,10 @@ export function IncidentCard({
 
   const handleRegenerateProposal = async (proposalId: string) => {
     try {
-      // First reject the current proposal
       await rejectAssignmentProposal(proposalId);
-
-      // Clear the proposal from local state
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? { ...p, proposal: null, proposalItems: [] }
-            : p,
-        ),
-      );
-
-      // Request a new proposal
+      onProposalStatusChange(proposalId, {
+        rejected_at: new Date().toISOString(),
+      });
       await requestAssignmentProposal(incident.id);
       toast.success("Nouvelle proposition demandee.");
     } catch (error) {
@@ -386,10 +143,6 @@ export function IncidentCard({
     }
   };
 
-  const hasPendingProposals = phaseProposals.some(
-    (p) => p.proposal && !p.proposal.validated_at && !p.proposal.rejected_at,
-  );
-
   return (
     <Collapsible defaultOpen={incident.status === "new" || hasPendingProposals}>
       <div
@@ -398,71 +151,87 @@ export function IncidentCard({
           severity.border,
         )}
       >
-        <CollapsibleTrigger className="flex w-full items-center gap-2.5 p-2.5 text-left">
+        <CollapsibleTrigger asChild>
           <div
-            className={cn(
-              "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-              severity.bg,
-            )}
+            className="flex w-full items-center gap-2.5 p-2.5 text-left"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) {
+                return;
+              }
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
           >
-            <AlertTriangle className={cn("h-4 w-4", severity.text)} />
-            {incident.status === "new" && incident.severity === "critical" && (
-              <span
-                className={cn(
-                  "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full",
-                  severity.dot,
+            <div
+              className={cn(
+                "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                severity.bg,
+              )}
+            >
+              <AlertTriangle className={cn("h-4 w-4", severity.text)} />
+              {incident.status === "new" &&
+                incident.severity === "critical" && (
+                  <span
+                    className={cn(
+                      "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full",
+                      severity.dot,
+                    )}
+                  />
                 )}
-              />
-            )}
-          </div>
+            </div>
 
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium text-white whitespace-normal">
-              {incident.title}
-            </p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-4 px-1.5 text-[9px]",
-                  severity.bg,
-                  severity.text,
-                  severity.border,
-                )}
-              >
-                {severity.label}
-              </Badge>
-              <span className="text-[10px] text-white/40">
-                {formatDate(incident.reportedAt)}
-              </span>
-              {hasPendingProposals && (
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <p className="truncate text-sm font-medium text-white whitespace-normal">
+                {incident.title}
+              </p>
+              <div className="mt-0.5 flex items-center gap-1.5">
                 <Badge
                   variant="outline"
-                  className="h-4 border-blue-500/30 bg-blue-500/20 px-1.5 text-[9px] text-blue-400"
+                  className={cn(
+                    "h-4 px-1.5 text-[9px]",
+                    severity.bg,
+                    severity.text,
+                    severity.border,
+                  )}
                 >
-                  Propositions
+                  {severity.label}
                 </Badge>
-              )}
+                <span className="text-[10px] text-white/40">
+                  {formatIncidentDate(incident.reportedAt)}
+                </span>
+                {hasPendingProposals && (
+                  <Badge
+                    variant="outline"
+                    className="h-4 border-blue-500/30 bg-blue-500/20 px-1.5 text-[9px] text-blue-400"
+                  >
+                    Propositions
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-white/40 hover:bg-white/10 hover:text-white"
-              title="Centrer sur l'incident"
-              aria-label="Centrer sur l'incident"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onFocus?.(incident);
-              }}
-            >
-              <LocateFixed className="h-3.5 w-3.5" />
-            </Button>
-            <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white/40 hover:bg-white/10 hover:text-white"
+                title="Centrer sur l'incident"
+                aria-label="Centrer sur l'incident"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onFocus?.(incident);
+                }}
+              >
+                <LocateFixed className="h-3.5 w-3.5" />
+              </Button>
+              <ChevronDown className="h-4 w-4 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+            </div>
           </div>
         </CollapsibleTrigger>
 
@@ -485,6 +254,7 @@ export function IncidentCard({
                     proposal={phaseState.proposal}
                     proposalItems={phaseState.proposalItems}
                     vehicleAssignments={phaseState.vehicleAssignments}
+                    phaseEndedAt={phaseState.phaseEndedAt}
                     resolve={resolve}
                     onValidate={handleValidateProposal}
                     onReject={handleRejectProposal}
@@ -510,7 +280,32 @@ export function IncidentCard({
                   {incident.location.lng.toFixed(3)}
                 </span>
               </span>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-2">
+                <IncidentPhaseDialog
+                  incidentId={incident.id}
+                  trigger={
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={isActionDisabled}
+                      className={cn(
+                        "h-7 gap-1.5 border-primary/30 bg-primary/10 px-2 text-[10px] font-semibold text-white/80",
+                        "hover:border-primary/40 hover:bg-primary/20 hover:text-white",
+                        "disabled:cursor-not-allowed disabled:opacity-60",
+                      )}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                      }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Nouvelle phase
+                    </Button>
+                  }
+                />
                 <Button
                   type="button"
                   size="sm"

@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type {
   AssignmentProposal,
   AssignmentProposalItem,
-  AssignmentProposalMissing,
   Incident,
   VehicleAssignment,
 } from "@/types/qg";
@@ -18,6 +17,7 @@ import {
   Flame,
   AlertCircle,
   Info,
+  Plus,
   Sparkles,
   LoaderCircle,
 } from "lucide-react";
@@ -28,11 +28,10 @@ import {
   requestPhaseAssignmentProposal,
   validateAssignmentProposal,
   rejectAssignmentProposal,
-  fetchAssignmentProposals,
 } from "@/lib/assignment-proposals/service";
-import { useLiveEvents } from "@/components/live-events-provider";
 import { useResolver } from "@/components/resolver-provider";
 import { PhaseProposalCard } from "@/components/qg/cards/phase-proposal-card";
+import { IncidentPhaseDialog } from "@/components/qg/cards/incident-phase-dialog";
 
 const severityConfig: Record<
   Incident["severity"],
@@ -104,6 +103,7 @@ const formatDate = (dateString: string) => {
 type PhaseProposalState = {
   phaseId: string;
   phaseCode: string;
+  phaseEndedAt?: string | null;
   proposal: AssignmentProposal | null;
   proposalItems: AssignmentProposalItem[];
   vehicleAssignments: VehicleAssignment[];
@@ -111,24 +111,19 @@ type PhaseProposalState = {
 
 type IncidentMarkerPopoverContentProps = {
   incident: Incident;
+  proposals: AssignmentProposal[];
+  onProposalStatusChange: (
+    proposalId: string,
+    update: { validated_at?: string | null; rejected_at?: string | null },
+  ) => void;
 };
 
 export function IncidentMarkerPopoverContent({
   incident,
+  proposals,
+  onProposalStatusChange,
 }: IncidentMarkerPopoverContentProps) {
   const [isRequesting, setIsRequesting] = useState(false);
-  const [phaseProposals, setPhaseProposals] = useState<PhaseProposalState[]>(
-    () =>
-      incident.phases.map((phase) => ({
-        phaseId: phase.id,
-        phaseCode: phase.code,
-        proposal: null,
-        proposalItems: [],
-        vehicleAssignments: phase.vehicleAssignments ?? [],
-      })),
-  );
-
-  const { onEvent } = useLiveEvents();
   const { resolve } = useResolver();
 
   const config = severityConfig[incident.severity];
@@ -137,147 +132,57 @@ export function IncidentMarkerPopoverContent({
   const isIncidentResolved = incident.status === "resolved";
   const isActionDisabled = isRequesting || isIncidentResolved;
 
-  // Listen for vehicle assignments via SSE
-  useEffect(() => {
-    const unsubscribe = onEvent("vehicle_assignment", (event) => {
-      const data = event.data as {
-        incident_id: string;
-        vehicle_assignment_id: string;
-        vehicle_id: string;
-        incident_phase_id: string;
-        assigned_at: string;
-        assigned_by_operator_id?: string | null;
-        validated_at?: string | null;
-        validated_by_operator_id?: string | null;
-        unassigned_at?: string | null;
-      };
+  const phaseProposals = useMemo<PhaseProposalState[]>(() => {
+    const sortedPhases = [...incident.phases]
+      .map((phase, index) => ({
+        phase,
+        index,
+        startedAt: phase.startedAt
+          ? Date.parse(phase.startedAt)
+          : Number.POSITIVE_INFINITY,
+      }))
+      .sort((a, b) =>
+        a.startedAt === b.startedAt
+          ? a.index - b.index
+          : a.startedAt - b.startedAt,
+      )
+      .map(({ phase }) => phase);
 
-      if (data.incident_id !== incident.id) {
-        return;
-      }
+    const proposalsByPhase = new Map<
+      string,
+      { proposal: AssignmentProposal; items: AssignmentProposalItem[] }
+    >();
 
-      const newAssignment: VehicleAssignment = {
-        id: data.vehicle_assignment_id,
-        vehicleId: data.vehicle_id,
-        phaseId: data.incident_phase_id,
-        assignedAt: data.assigned_at,
-        validatedAt: data.validated_at ?? null,
-        unassignedAt: data.unassigned_at ?? null,
-      };
-
-      setPhaseProposals((prev) => {
-        return prev.map((phase) => {
-          if (phase.phaseId !== data.incident_phase_id) {
-            return phase;
-          }
-
-          // Check if assignment already exists (update) or is new (add)
-          const existingIndex = phase.vehicleAssignments.findIndex(
-            (a) => a.id === newAssignment.id,
-          );
-
-          if (existingIndex !== -1) {
-            // Update existing assignment
-            const updatedAssignments = [...phase.vehicleAssignments];
-            updatedAssignments[existingIndex] = newAssignment;
-            return { ...phase, vehicleAssignments: updatedAssignments };
-          } else {
-            // Add new assignment
-            return {
-              ...phase,
-              vehicleAssignments: [...phase.vehicleAssignments, newAssignment],
-            };
-          }
-        });
-      });
-    });
-
-    return unsubscribe;
-  }, [incident.id, onEvent]);
-
-  const updatePhaseProposalsFromAssignments = useCallback(
-    (proposals: AssignmentProposal[]) => {
-      setPhaseProposals((prev) => {
-        const updated = [...prev];
-
-        for (const proposal of proposals) {
-          const itemsByPhase = new Map<string, AssignmentProposalItem[]>();
-
-          for (const item of proposal.vehicles_to_send) {
-            const existing = itemsByPhase.get(item.incident_phase_id) || [];
-            existing.push(item);
-            itemsByPhase.set(item.incident_phase_id, existing);
-          }
-
-          for (const [phaseId, items] of itemsByPhase) {
-            const phaseIndex = updated.findIndex((p) => p.phaseId === phaseId);
-            if (phaseIndex !== -1) {
-              const sortedItems = [...items].sort((a, b) => b.score - a.score);
-              updated[phaseIndex] = {
-                ...updated[phaseIndex],
-                proposal,
-                proposalItems: sortedItems,
-              };
-            }
-          }
+    for (const proposal of proposals) {
+      for (const item of proposal.vehicles_to_send) {
+        const existing = proposalsByPhase.get(item.incident_phase_id);
+        if (existing) {
+          existing.items.push(item);
+        } else {
+          proposalsByPhase.set(item.incident_phase_id, {
+            proposal,
+            items: [item],
+          });
         }
-
-        return updated;
-      });
-    },
-    [],
-  );
-
-  // Fetch existing proposals for this incident on mount
-  useEffect(() => {
-    const loadProposals = async () => {
-      try {
-        const proposals = await fetchAssignmentProposals();
-        const incidentProposals = proposals.filter(
-          (p) => p.incident_id === incident.id,
-        );
-
-        if (incidentProposals.length > 0) {
-          updatePhaseProposalsFromAssignments(incidentProposals);
-        }
-      } catch {
-        // Silently fail - proposals will load via SSE
       }
-    };
+    }
 
-    loadProposals();
-  }, [incident.id, updatePhaseProposalsFromAssignments]);
+    return sortedPhases.map((phase) => {
+      const proposalData = proposalsByPhase.get(phase.id);
+      const sortedItems = proposalData
+        ? [...proposalData.items].sort((a, b) => b.score - a.score)
+        : [];
 
-  // Listen for new assignment proposals via SSE
-  useEffect(() => {
-    const unsubscribe = onEvent("assignment_proposal", (event) => {
-      const data = event.data as {
-        proposal_id: string;
-        incident_id: string;
-        generated_at: string;
-        vehicles_to_send: AssignmentProposalItem[];
-        missing: AssignmentProposalMissing[];
+      return {
+        phaseId: phase.id,
+        phaseCode: phase.code,
+        phaseEndedAt: phase.endedAt ?? null,
+        proposal: proposalData?.proposal ?? null,
+        proposalItems: sortedItems,
+        vehicleAssignments: phase.vehicleAssignments ?? [],
       };
-
-      if (data.incident_id !== incident.id) {
-        return;
-      }
-
-      const newProposal: AssignmentProposal = {
-        proposal_id: data.proposal_id,
-        incident_id: data.incident_id,
-        generated_at: data.generated_at,
-        vehicles_to_send: data.vehicles_to_send,
-        missing: data.missing,
-        validated_at: null,
-        rejected_at: null,
-      };
-
-      updatePhaseProposalsFromAssignments([newProposal]);
     });
-
-    return unsubscribe;
-  }, [incident.id, onEvent, updatePhaseProposalsFromAssignments]);
+  }, [incident.phases, proposals]);
 
   const handleRequestAssignment = async () => {
     if (!incident.id) {
@@ -303,20 +208,9 @@ export function IncidentMarkerPopoverContent({
     try {
       await validateAssignmentProposal(proposalId);
       toast.success("Proposition validée.");
-
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? {
-                ...p,
-                proposal: {
-                  ...p.proposal,
-                  validated_at: new Date().toISOString(),
-                },
-              }
-            : p,
-        ),
-      );
+      onProposalStatusChange(proposalId, {
+        validated_at: new Date().toISOString(),
+      });
     } catch (error) {
       toast.error(formatErrorMessage("Erreur lors de la validation.", error));
     }
@@ -326,14 +220,9 @@ export function IncidentMarkerPopoverContent({
     try {
       await rejectAssignmentProposal(proposalId);
       toast.success("Proposition refusée.");
-
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? { ...p, proposal: null, proposalItems: [] }
-            : p,
-        ),
-      );
+      onProposalStatusChange(proposalId, {
+        rejected_at: new Date().toISOString(),
+      });
     } catch (error) {
       toast.error(formatErrorMessage("Erreur lors du refus.", error));
     }
@@ -342,14 +231,9 @@ export function IncidentMarkerPopoverContent({
   const handleRegenerateProposal = async (proposalId: string) => {
     try {
       await rejectAssignmentProposal(proposalId);
-
-      setPhaseProposals((prev) =>
-        prev.map((p) =>
-          p.proposal?.proposal_id === proposalId
-            ? { ...p, proposal: null, proposalItems: [] }
-            : p,
-        ),
-      );
+      onProposalStatusChange(proposalId, {
+        rejected_at: new Date().toISOString(),
+      });
 
       await requestAssignmentProposal(incident.id);
       toast.success("Nouvelle proposition demandée.");
@@ -428,6 +312,7 @@ export function IncidentMarkerPopoverContent({
                 proposal={phaseState.proposal}
                 proposalItems={phaseState.proposalItems}
                 vehicleAssignments={phaseState.vehicleAssignments}
+                phaseEndedAt={phaseState.phaseEndedAt}
                 resolve={resolve}
                 onValidate={handleValidateProposal}
                 onReject={handleRejectProposal}
@@ -455,7 +340,32 @@ export function IncidentMarkerPopoverContent({
         </div>
 
         {/* Action button */}
-        <div className="flex justify-end pt-1">
+        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+          <IncidentPhaseDialog
+            incidentId={incident.id}
+            trigger={
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isActionDisabled}
+                className={cn(
+                  "h-7 gap-1.5 border-primary/30 bg-primary/10 px-2.5 text-[10px] font-semibold text-white/80",
+                  "hover:border-primary/40 hover:bg-primary/20 hover:text-white",
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Nouvelle phase
+              </Button>
+            }
+          />
           <Button
             type="button"
             size="sm"

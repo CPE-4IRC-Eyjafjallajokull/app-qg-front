@@ -11,6 +11,13 @@ export type IncidentPhaseType = {
   phase_category_id?: string;
 };
 
+export type IncidentPhaseCreatePayload = {
+  phase_type_id: string;
+  priority?: number | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+};
+
 export type IncidentDeclarationLocation = {
   address: string;
   zipcode: string;
@@ -85,6 +92,33 @@ export async function fetchIncidentPhaseTypes(): Promise<IncidentPhaseType[]> {
   return adminRequest<IncidentPhaseType[]>("incidents/phase/types", {
     method: "GET",
   });
+}
+
+export async function createIncidentPhase(
+  incidentId: string,
+  payload: IncidentPhaseCreatePayload,
+): Promise<unknown> {
+  const response = await fetchWithAuth(
+    `/api/incidents/${incidentId}/phases/new`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include",
+      cache: "no-store",
+    },
+  );
+
+  const parsedBody = await parseResponseBody(response);
+
+  if (!response.ok) {
+    const message =
+      getErrorMessage(response, parsedBody) ||
+      "Failed to create incident phase.";
+    throw new Error(message);
+  }
+
+  return parsedBody.json;
 }
 
 export async function fetchIncidents(): Promise<Incident[]> {
@@ -226,6 +260,7 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
     description: incident.description ?? "",
     severity: severity,
     status: incidentStatus,
+    endedAt: incident.ended_at ?? null,
     location: {
       lat: latitude,
       lng: longitude,
@@ -237,6 +272,8 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
         id: phase.incident_phase_id,
         code: phase.phase_type.code,
         label,
+        startedAt: phase.started_at ?? null,
+        endedAt: phase.ended_at ?? null,
         vehicleAssignments: phase.vehicle_assignments.map((assignment) => ({
           id: assignment.vehicle_assignment_id,
           vehicleId: assignment.vehicle_id,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type {
   Incident,
   IncidentSeverity,
+  ProposalsByIncident,
   Vehicle,
   VehicleStatus,
   VehicleType,
@@ -29,6 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useLiveEvents } from "@/components/live-events-provider";
 import { IncidentCard } from "./cards/incident-card";
+import { IncidentClosedCard } from "./cards/incident-closed-card";
 import { VehicleCard } from "./cards/vehicle-card";
 import { EmptyState } from "./side-panel/empty-state";
 import { FiltersPanel } from "./side-panel/filters-panel";
@@ -38,6 +40,11 @@ import { MiniCounter } from "./side-panel/mini-counter";
 type SidePanelProps = {
   incidents: Incident[];
   vehicles: Vehicle[];
+  proposalsByIncident: ProposalsByIncident;
+  onProposalStatusChange: (
+    proposalId: string,
+    update: { validated_at?: string | null; rejected_at?: string | null },
+  ) => void;
   onFocusIncident?: (incident: Incident) => void;
   onFocusVehicle?: (vehicle: Vehicle) => void;
 };
@@ -45,6 +52,8 @@ type SidePanelProps = {
 export function SidePanel({
   incidents,
   vehicles,
+  proposalsByIncident,
+  onProposalStatusChange,
   onFocusIncident,
   onFocusVehicle,
 }: SidePanelProps) {
@@ -78,16 +87,7 @@ export function SidePanel({
   );
 
   const normalizedIncidentQuery = incidentQuery.trim().toLowerCase();
-  const filteredIncidents = incidents.filter((incident) => {
-    if (incidentSeverity !== "all" && incident.severity !== incidentSeverity) {
-      return false;
-    }
-    if (incidentAssignment === "assigned" && incident.status !== "assigned") {
-      return false;
-    }
-    if (incidentAssignment === "unassigned" && incident.status !== "new") {
-      return false;
-    }
+  const matchesIncidentQuery = (incident: Incident) => {
     if (!normalizedIncidentQuery) {
       return true;
     }
@@ -96,11 +96,34 @@ export function SidePanel({
       incident.description.toLowerCase().includes(normalizedIncidentQuery) ||
       incident.id.toLowerCase().includes(normalizedIncidentQuery)
     );
-  });
+  };
+  const matchesIncidentSeverity = (incident: Incident) =>
+    incidentSeverity === "all" || incident.severity === incidentSeverity;
   const isIncidentFiltered =
     normalizedIncidentQuery ||
     incidentSeverity !== "all" ||
     incidentAssignment !== "all";
+  const filteredIncidents = incidents.filter(
+    (incident) =>
+      matchesIncidentSeverity(incident) && matchesIncidentQuery(incident),
+  );
+  const filteredActiveIncidents = filteredIncidents.filter((incident) => {
+    if (incident.endedAt) {
+      return false;
+    }
+    if (incidentAssignment === "assigned" && incident.status !== "assigned") {
+      return false;
+    }
+    if (incidentAssignment === "unassigned" && incident.status !== "new") {
+      return false;
+    }
+    return true;
+  });
+  const filteredResolvedIncidents = filteredIncidents.filter((incident) =>
+    Boolean(incident.endedAt),
+  );
+  const hasFilteredIncidents =
+    filteredActiveIncidents.length + filteredResolvedIncidents.length > 0;
 
   const normalizedVehicleQuery = vehicleQuery.trim().toLowerCase();
   const filteredVehicles = vehicles.filter((vehicle) => {
@@ -299,7 +322,7 @@ export function SidePanel({
           </FiltersPanel>
           <ScrollArea className="flex-1 min-h-0">
             <div className="space-y-1.5 pb-2 pr-2">
-              {filteredIncidents.length === 0 ? (
+              {!hasFilteredIncidents ? (
                 <EmptyState
                   icon={<Zap className="h-8 w-8" />}
                   title={
@@ -312,19 +335,53 @@ export function SidePanel({
                   }
                 />
               ) : (
-                [...filteredIncidents]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.reportedAt).getTime() -
-                      new Date(a.reportedAt).getTime(),
-                  )
-                  .map((incident) => (
-                    <IncidentCard
-                      key={incident.id}
-                      incident={incident}
-                      onFocus={onFocusIncident}
-                    />
-                  ))
+                <>
+                  {filteredActiveIncidents.length > 0 ? (
+                    <>
+                      <div className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                        Incidents en cours
+                      </div>
+                      {[...filteredActiveIncidents]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.reportedAt).getTime() -
+                            new Date(a.reportedAt).getTime(),
+                        )
+                        .map((incident) => (
+                          <IncidentCard
+                            key={incident.id}
+                            incident={incident}
+                            proposals={
+                              proposalsByIncident.get(incident.id) ?? []
+                            }
+                            onProposalStatusChange={onProposalStatusChange}
+                            onFocus={onFocusIncident}
+                          />
+                        ))}
+                    </>
+                  ) : null}
+                  {filteredResolvedIncidents.length > 0 ? (
+                    <>
+                      <div className="pt-3 text-[11px] font-semibold uppercase tracking-wide text-white/40">
+                        Incidents terminés
+                      </div>
+                      {[...filteredResolvedIncidents]
+                        .sort(
+                          (a, b) =>
+                            new Date(b.reportedAt).getTime() -
+                            new Date(a.reportedAt).getTime(),
+                        )
+                        .map((incident) => (
+                          <div
+                            key={incident.id}
+                            className="opacity-50 grayscale"
+                          >
+                            <IncidentClosedCard incident={incident} />
+                          </div>
+                        ))}
+                    </>
+                  ) : null}
+                </>
               )}
             </div>
           </ScrollArea>
