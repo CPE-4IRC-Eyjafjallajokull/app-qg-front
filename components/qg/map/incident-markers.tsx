@@ -37,7 +37,7 @@ const severityConfig: Record<
     pulse: true,
   },
   high: {
-    label: "Elevee",
+    label: "Élevée",
     markerClassName:
       "bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-500/40 shadow-lg ring-2 ring-amber-300/60",
     badgeClassName: "bg-amber-500/20 text-amber-300 border-amber-500/30",
@@ -75,12 +75,12 @@ const statusConfig: Record<
     dot: "bg-red-400",
   },
   assigned: {
-    label: "Assigne",
+    label: "Assigné",
     className: "bg-sky-500/20 text-sky-300 border-sky-500/30",
     dot: "bg-sky-400",
   },
   resolved: {
-    label: "Resolu",
+    label: "Résolu",
     className: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
     dot: "bg-emerald-400",
   },
