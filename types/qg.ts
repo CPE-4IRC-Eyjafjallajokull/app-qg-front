@@ -17,10 +17,20 @@ export type Incident = {
   phases: IncidentPhase[];
 };
 
+export type VehicleAssignment = {
+  id: string;
+  vehicleId: string;
+  phaseId: string;
+  assignedAt: string;
+  validatedAt?: string | null;
+  unassignedAt?: string | null;
+};
+
 export type IncidentPhase = {
   id: string;
   code: string;
   label: string;
+  vehicleAssignments: VehicleAssignment[];
 };
 
 export type AssignmentProposalItem = {
@@ -28,17 +38,27 @@ export type AssignmentProposalItem = {
   vehicle_id: string;
   distance_km: number;
   estimated_time_min: number;
+  route_geometry?: {
+    type: string;
+    coordinates: number[][];
+  };
   energy_level: number;
   score: number;
-  rationale?: string | null;
+  rank: number;
+};
+
+export type AssignmentProposalMissing = {
+  incident_phase_id: string;
+  vehicle_type_id: string;
+  missing_quantity: number;
 };
 
 export type AssignmentProposal = {
   proposal_id: string;
   incident_id: string;
   generated_at: string;
-  proposals: AssignmentProposalItem[];
-  missing_by_vehicle_type: Record<string, number>;
+  vehicles_to_send: AssignmentProposalItem[];
+  missing: AssignmentProposalMissing[];
   validated_at?: string | null;
   rejected_at?: string | null;
 };

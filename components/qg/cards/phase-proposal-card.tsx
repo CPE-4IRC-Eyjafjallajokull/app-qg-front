@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { AssignmentProposal, AssignmentProposalItem } from "@/types/qg";
+import type {
+  AssignmentProposal,
+  AssignmentProposalItem,
+  VehicleAssignment,
+} from "@/types/qg";
 import type { ResolverType } from "@/lib/resolver.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,34 +21,42 @@ import {
   LoaderCircle,
   RefreshCw,
   Layers,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { VehicleProposalItem } from "./vehicle-proposal-item";
+import { VehicleItemCompact } from "./vehicle-item-compact";
 
 type PhaseProposalCardProps = {
   phaseId: string;
+  incidentId: string;
   proposal: AssignmentProposal | null;
   proposalItems: AssignmentProposalItem[];
+  vehicleAssignments: VehicleAssignment[];
   resolve: (type: ResolverType, id: string) => Record<string, unknown> | null;
   onValidate?: (proposalId: string) => Promise<void>;
   onReject?: (proposalId: string) => Promise<void>;
   onRegenerate?: (proposalId: string) => Promise<void>;
+  onRequestAssignment?: (incidentId: string, phaseId: string) => Promise<void>;
   isIncidentResolved?: boolean;
 };
 
 export function PhaseProposalCard({
   phaseId,
+  incidentId,
   proposal,
   proposalItems,
+  vehicleAssignments,
   resolve,
   onValidate,
   onReject,
   onRegenerate,
+  onRequestAssignment,
   isIncidentResolved = false,
 }: PhaseProposalCardProps) {
   const [isValidating, setIsValidating] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const incidentPhase = resolve("incident_phase_id", phaseId) as {
     phase_type?: {
@@ -56,7 +68,13 @@ export function PhaseProposalCard({
   const phaseLabel = incidentPhase?.phase_type?.label || "Phase inconnue";
   const phaseCode = incidentPhase?.phase_type?.code || "";
 
+  // Filter active assignments (not unassigned)
+  const activeAssignments = vehicleAssignments.filter(
+    (a) => a.unassignedAt === null || a.unassignedAt === undefined,
+  );
+  const hasAssignments = activeAssignments.length > 0;
   const hasProposals = proposalItems.length > 0;
+  const hasContent = hasAssignments || hasProposals;
   const isPending = proposal && !proposal.validated_at && !proposal.rejected_at;
   const isValidated = proposal?.validated_at;
   const isRejected = proposal?.rejected_at;
@@ -91,7 +109,18 @@ export function PhaseProposalCard({
     }
   };
 
+  const handleRequestAssignment = async () => {
+    if (!onRequestAssignment || isRequesting) return;
+    setIsRequesting(true);
+    try {
+      await onRequestAssignment(incidentId, phaseId);
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
   const getBorderColor = () => {
+    if (hasAssignments) return "border-emerald-500/30";
     if (isValidated) return "border-emerald-500/30";
     if (isRejected) return "border-red-500/30";
     if (hasProposals) return "border-blue-500/30";
@@ -99,6 +128,17 @@ export function PhaseProposalCard({
   };
 
   const getStatusBadge = () => {
+    if (hasAssignments) {
+      return (
+        <Badge
+          variant="outline"
+          className="border-emerald-500/30 bg-emerald-500/20 text-[9px] text-emerald-400"
+        >
+          {activeAssignments.length} affecte
+          {activeAssignments.length > 1 ? "s" : ""}
+        </Badge>
+      );
+    }
     if (isValidated) {
       return (
         <Badge
@@ -140,7 +180,7 @@ export function PhaseProposalCard({
   };
 
   return (
-    <Collapsible defaultOpen={hasProposals && !!isPending}>
+    <Collapsible defaultOpen={hasContent || (hasProposals && !!isPending)}>
       <div
         className={cn(
           "overflow-hidden rounded-lg border bg-white/5 backdrop-blur-sm transition-all",
@@ -151,19 +191,27 @@ export function PhaseProposalCard({
           <div
             className={cn(
               "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-              hasProposals ? "bg-blue-500/20" : "bg-white/10",
+              hasAssignments
+                ? "bg-emerald-500/20"
+                : hasProposals
+                  ? "bg-blue-500/20"
+                  : "bg-white/10",
             )}
           >
             <Layers
               className={cn(
                 "h-3.5 w-3.5",
-                hasProposals ? "text-blue-400" : "text-white/40",
+                hasAssignments
+                  ? "text-emerald-400"
+                  : hasProposals
+                    ? "text-blue-400"
+                    : "text-white/40",
               )}
             />
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">
+            <p className="truncate text-xs font-medium text-white whitespace-normal">
               {phaseLabel}
             </p>
             {phaseCode && (
@@ -173,96 +221,142 @@ export function PhaseProposalCard({
 
           <div className="flex items-center gap-1.5">
             {getStatusBadge()}
-            {hasProposals && (
+            {hasContent && (
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-white/30 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
             )}
           </div>
         </CollapsibleTrigger>
 
-        {hasProposals && (
+        {hasContent ? (
           <CollapsibleContent>
             <div className="space-y-2 border-t border-white/10 p-2">
-              <div className="space-y-1.5">
-                {proposalItems.map((item, idx) => (
-                  <VehicleProposalItem
-                    key={`${item.vehicle_id}-${idx}`}
-                    proposal={item}
-                    index={idx}
-                    resolve={resolve}
-                    isSelected={idx === 0 && !!isPending}
-                  />
-                ))}
-              </div>
+              {/* Affectations actives */}
+              {hasAssignments && (
+                <div className="space-y-1">
+                  {activeAssignments.map((assignment, idx) => (
+                    <VehicleItemCompact
+                      key={assignment.id}
+                      item={{ type: "assignment", data: assignment }}
+                      index={idx}
+                      resolve={resolve}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Propositions en attente */}
+              {hasProposals && (
+                <div className="space-y-1">
+                  {proposalItems.map((proposalItem, idx) => (
+                    <VehicleItemCompact
+                      key={`${proposalItem.vehicle_id}-${idx}`}
+                      item={{ type: "proposal", data: proposalItem }}
+                      index={idx}
+                      resolve={resolve}
+                    />
+                  ))}
+                </div>
+              )}
 
               {isPending && !isIncidentResolved && (
-                <div className="flex gap-1.5 pt-1">
+                <div className="flex gap-1 pt-1">
                   <Button
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "flex-1 gap-1 border-red-500/30 bg-red-500/10 px-2 text-red-400",
+                      "border-red-500/30 bg-red-500/10 px-2 text-red-400",
                       "hover:border-red-500/50 hover:bg-red-500/20 hover:text-red-300",
-                      "h-7",
+                      "h-7 w-7",
                     )}
                     disabled={isRejecting || isValidating || isRegenerating}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleReject();
                     }}
+                    title="Refuser"
                   >
                     {isRejecting ? (
-                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <X className="h-3 w-3" />
+                      <X className="h-3.5 w-3.5" />
                     )}
-                    <span className="text-[10px] font-medium">Refuser</span>
                   </Button>
 
                   <Button
                     size="sm"
                     variant="outline"
                     className={cn(
-                      "gap-1 border-amber-500/30 bg-amber-500/10 px-2 text-amber-400",
+                      "border-amber-500/30 bg-amber-500/10 px-2 text-amber-400",
                       "hover:border-amber-500/50 hover:bg-amber-500/20 hover:text-amber-300",
-                      "h-7",
+                      "h-7 w-7",
                     )}
                     disabled={isRejecting || isValidating || isRegenerating}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRegenerate();
                     }}
+                    title="Regenerer"
                   >
                     {isRegenerating ? (
-                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-3 w-3" />
+                      <RefreshCw className="h-3.5 w-3.5" />
                     )}
                   </Button>
 
                   <Button
                     size="sm"
                     className={cn(
-                      "flex-1 gap-1 bg-emerald-600 px-2 text-white",
+                      "bg-emerald-600 px-2 text-white",
                       "hover:bg-emerald-500",
-                      "h-7",
+                      "h-7 w-7",
                     )}
                     disabled={isRejecting || isValidating || isRegenerating}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleValidate();
                     }}
+                    title="Valider"
                   >
                     {isValidating ? (
-                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3.5 w-3.5" />
                     )}
-                    <span className="text-[10px] font-medium">Valider</span>
                   </Button>
                 </div>
               )}
             </div>
           </CollapsibleContent>
+        ) : (
+          !isIncidentResolved &&
+          onRequestAssignment && (
+            <div className="border-t border-white/10 p-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className={cn(
+                  "w-full gap-1.5 border-blue-500/30 bg-blue-500/10 text-blue-400",
+                  "hover:border-blue-500/50 hover:bg-blue-500/20 hover:text-blue-300",
+                  "h-7",
+                )}
+                disabled={isRequesting}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRequestAssignment();
+                }}
+              >
+                {isRequesting ? (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                <span className="text-[10px] font-medium">
+                  Demander assignation
+                </span>
+              </Button>
+            </div>
+          )
         )}
       </div>
     </Collapsible>

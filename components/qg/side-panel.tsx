@@ -312,13 +312,19 @@ export function SidePanel({
                   }
                 />
               ) : (
-                filteredIncidents.map((incident) => (
-                  <IncidentCard
-                    key={incident.id}
-                    incident={incident}
-                    onFocus={onFocusIncident}
-                  />
-                ))
+                [...filteredIncidents]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.reportedAt).getTime() -
+                      new Date(a.reportedAt).getTime(),
+                  )
+                  .map((incident) => (
+                    <IncidentCard
+                      key={incident.id}
+                      incident={incident}
+                      onFocus={onFocusIncident}
+                    />
+                  ))
               )}
             </div>
           </ScrollArea>

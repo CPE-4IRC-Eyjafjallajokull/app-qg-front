@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { AlertTriangle, Crosshair, X, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
@@ -47,24 +47,31 @@ export function MapClickPopup({
   const [phaseTypeId, setPhaseTypeId] = useState(() =>
     phaseTypes.length > 0 ? phaseTypes[0].phase_type_id : "",
   );
-  const [priority, setPriority] = useState("");
+  const [priority, setPriority] = useState<string | undefined>(undefined);
 
-  const phaseTypeLabel = useMemo(() => {
-    return (
-      phaseTypes.find((phase) => phase.phase_type_id === phaseTypeId)?.label ??
-      ""
-    );
-  }, [phaseTypes, phaseTypeId]);
+  const priorityOptions = [
+    { value: "0", label: "Critique" },
+    { value: "1", label: "Élevé" },
+    { value: "2", label: "Moyen" },
+    { value: "3", label: "Faible" },
+  ];
+
+  const phaseTypeOptions = useMemo(
+    () =>
+      phaseTypes.map((phase) => ({
+        value: phase.phase_type_id,
+        label: phase.label || phase.code,
+      })),
+    [phaseTypes],
+  );
 
   const handleDeclareIncident = () => {
     if (!phaseTypeId) {
       return;
     }
-    const numericPriority =
-      priority.trim().length > 0 ? Number.parseInt(priority, 10) : null;
     onDeclareIncident({
       phaseTypeId,
-      priority: Number.isNaN(numericPriority) ? null : numericPriority,
+      priority: priority !== undefined ? Number.parseInt(priority, 10) : null,
     });
   };
 
@@ -87,7 +94,7 @@ export function MapClickPopup({
         {/* Fleche indicatrice */}
         <div className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-white/10 bg-black/85" />
 
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/85 shadow-2xl backdrop-blur-2xl">
+        <div className="relative rounded-xl border border-white/10 bg-black/85 shadow-2xl backdrop-blur-2xl">
           {/* Header */}
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2.5">
             <div className="flex items-center gap-2.5">
@@ -123,42 +130,47 @@ export function MapClickPopup({
                 Declarer un incident
               </p>
               <div className="grid gap-2">
-                <Select
+                <Combobox
                   value={phaseTypeId}
                   onValueChange={setPhaseTypeId}
+                  options={phaseTypeOptions}
                   disabled={isDeclaringIncident || isLoadingPhaseTypes}
+                  placeholder={
+                    isLoadingPhaseTypes ? "Chargement..." : "Type de phase"
+                  }
+                  searchPlaceholder="Rechercher un type..."
+                  emptyLabel="Aucun type trouve"
+                  className="h-8 border-white/10 bg-white/5 text-xs text-white hover:bg-white/10"
+                  contentClassName="border border-white/10 bg-black/90 text-white shadow-2xl backdrop-blur-xl"
+                  commandClassName="bg-transparent text-white"
+                  inputClassName="text-white placeholder:text-white/40"
+                  groupClassName="text-white"
+                  itemClassName="text-white data-[selected=true]:bg-white/10 data-[selected=true]:text-white"
+                  emptyClassName="text-white/60"
+                />
+                <Select
+                  value={priority}
+                  onValueChange={setPriority}
+                  disabled={isDeclaringIncident}
                 >
                   <SelectTrigger className="h-8 w-full border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 focus:ring-white/20">
-                    <SelectValue
-                      placeholder={
-                        isLoadingPhaseTypes ? "Chargement..." : "Type de phase"
-                      }
-                      aria-label={phaseTypeLabel || "Type de phase"}
-                    />
+                    <SelectValue placeholder="Priorité (optionnel)" />
                   </SelectTrigger>
                   <SelectContent
                     align="start"
                     className="border-white/10 bg-black/90 backdrop-blur-xl"
                   >
-                    {phaseTypes.map((phase) => (
+                    {priorityOptions.map((option) => (
                       <SelectItem
-                        key={phase.phase_type_id}
-                        value={phase.phase_type_id}
+                        key={option.value}
+                        value={option.value}
                         className="text-white focus:bg-white/10 focus:text-white"
                       >
-                        {phase.label || phase.code}
+                        {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  value={priority}
-                  onChange={(event) => setPriority(event.target.value)}
-                  placeholder="Priorite (optionnel)"
-                  inputMode="numeric"
-                  className="h-8 border-white/10 bg-white/5 text-xs text-white placeholder:text-white/30 hover:bg-white/10 focus:ring-white/20"
-                  disabled={isDeclaringIncident}
-                />
               </div>
               <Button
                 size="sm"

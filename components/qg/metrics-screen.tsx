@@ -158,12 +158,16 @@ export function MetricsScreen() {
       );
 
       if (firstAssignedAt) {
-        responseTimes.assigned.push(minutesBetween(createdAt, firstAssignedAt));
+        const delta = minutesBetween(createdAt, firstAssignedAt);
+        if (delta !== null) {
+          responseTimes.assigned.push(delta);
+        }
       }
       if (firstValidatedAt) {
-        responseTimes.validated.push(
-          minutesBetween(createdAt, firstValidatedAt),
-        );
+        const delta = minutesBetween(createdAt, firstValidatedAt);
+        if (delta !== null) {
+          responseTimes.validated.push(delta);
+        }
       }
     }
 
@@ -518,7 +522,7 @@ export function MetricsScreen() {
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <ChartLegend
-                    content={<ChartLegendContent />}
+                    content={<ChartLegendContent className="text-white/70" />}
                     verticalAlign="top"
                     align="right"
                     wrapperStyle={{ paddingBottom: 10 }}
@@ -571,7 +575,12 @@ export function MetricsScreen() {
                     ))}
                   </Pie>
                   <ChartLegend
-                    content={<ChartLegendContent nameKey="name" />}
+                    content={
+                      <ChartLegendContent
+                        nameKey="name"
+                        className="text-white/70"
+                      />
+                    }
                   />
                 </PieChart>
               </ChartContainer>
@@ -994,7 +1003,19 @@ function EmptyChartState() {
 function toDateMs(value?: string | null) {
   if (!value) return null;
   const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? null : parsed;
+  if (!Number.isNaN(parsed)) return parsed;
+
+  const normalized = value.replace(" ", "T");
+  const normalizedParsed = Date.parse(normalized);
+  if (!Number.isNaN(normalizedParsed)) return normalizedParsed;
+
+  const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(normalized);
+  if (!hasTimezone) {
+    const utcParsed = Date.parse(`${normalized}Z`);
+    if (!Number.isNaN(utcParsed)) return utcParsed;
+  }
+
+  return null;
 }
 
 function findEarliest(values: Array<string | null | undefined>) {
@@ -1006,7 +1027,9 @@ function findEarliest(values: Array<string | null | undefined>) {
 }
 
 function minutesBetween(start: number, end: number) {
-  return Math.max(0, Math.round((end - start) / 60000));
+  const diff = end - start;
+  if (diff < 0) return null;
+  return Math.round(diff / 60000);
 }
 
 function average(values: number[]) {
@@ -1069,14 +1092,16 @@ function buildResponseSeries(
     );
 
     if (firstAssignedAt) {
-      buckets[bucketIndex].assignedValues.push(
-        minutesBetween(createdAt, firstAssignedAt),
-      );
+      const delta = minutesBetween(createdAt, firstAssignedAt);
+      if (delta !== null) {
+        buckets[bucketIndex].assignedValues.push(delta);
+      }
     }
     if (firstValidatedAt) {
-      buckets[bucketIndex].validatedValues.push(
-        minutesBetween(createdAt, firstValidatedAt),
-      );
+      const delta = minutesBetween(createdAt, firstValidatedAt);
+      if (delta !== null) {
+        buckets[bucketIndex].validatedValues.push(delta);
+      }
     }
   }
 
@@ -1108,11 +1133,11 @@ function buildMissingByType(
   for (const p of assignments) {
     const generatedAt = toDateMs(p.generated_at);
     if (generatedAt && generatedAt < rangeStart) continue;
-    Object.entries(p.missing_by_vehicle_type).forEach(([typeId, count]) => {
-      // Convert UUID to readable code, fallback to typeId if not found
-      const typeName = typeMapping[typeId] ?? typeId;
-      map.set(typeName, (map.get(typeName) ?? 0) + count);
-    });
+    for (const missing of p.missing) {
+      const typeName =
+        typeMapping[missing.vehicle_type_id] ?? missing.vehicle_type_id;
+      map.set(typeName, (map.get(typeName) ?? 0) + missing.missing_quantity);
+    }
   }
   return Array.from(map.entries())
     .map(([type, count]) => ({ type, count }))
