@@ -231,7 +231,14 @@ export function mapIncidentToUi(incident: ApiIncidentRead): Incident | null {
       lng: longitude,
     },
     reportedAt: incident.created_at,
-    phases: incident.phases.map((phase) => phase.phase_type.code),
+    phases: incident.phases.map((phase) => {
+      const label = phase.phase_type.label?.trim() || phase.phase_type.code;
+      return {
+        id: phase.incident_phase_id,
+        code: phase.phase_type.code,
+        label,
+      };
+    }),
   };
 }
 
@@ -253,19 +260,19 @@ function mapIncidentToAssignmentOption(
 
   const phases = Array.isArray(incident.phases)
     ? incident.phases
-        .filter((phase) => !phase.ended_at)
-        .map((phase) => {
-          if (!phase.incident_phase_id) {
-            return null;
-          }
-          const label = phase.phase_type.label?.trim() || phase.phase_type.code;
-          return {
-            incident_phase_id: phase.incident_phase_id,
-            code: phase.phase_type.code,
-            label,
-          };
-        })
-        .filter((phase): phase is IncidentPhaseOption => Boolean(phase))
+      .filter((phase) => !phase.ended_at)
+      .map((phase) => {
+        if (!phase.incident_phase_id) {
+          return null;
+        }
+        const label = phase.phase_type.label?.trim() || phase.phase_type.code;
+        return {
+          incident_phase_id: phase.incident_phase_id,
+          code: phase.phase_type.code,
+          label,
+        };
+      })
+      .filter((phase): phase is IncidentPhaseOption => Boolean(phase))
     : [];
 
   return {

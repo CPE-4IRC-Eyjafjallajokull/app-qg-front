@@ -105,6 +105,7 @@ const formatDate = (dateString: string) => {
 
 type PhaseProposalState = {
   phaseId: string;
+  phaseCode: string;
   proposal: AssignmentProposal | null;
   proposalItems: AssignmentProposalItem[];
 };
@@ -119,12 +120,15 @@ export function IncidentCard({
   const [isRequesting, setIsRequesting] = useState(false);
   const [phaseProposals, setPhaseProposals] = useState<PhaseProposalState[]>(
     () =>
-      incident.phases.map((phaseId) => ({
-        phaseId,
+      incident.phases.map((phase) => ({
+        phaseId: phase.id,
+        phaseCode: phase.code,
         proposal: null,
         proposalItems: [],
-      })),
-  );
+      })
+      ));
+
+  console.log(`Phase proposals state:`, phaseProposals);
 
   const { onEvent } = useLiveEvents();
   const { resolve } = useResolver();
@@ -251,12 +255,12 @@ export function IncidentCard({
         prev.map((p) =>
           p.proposal?.proposal_id === proposalId
             ? {
-                ...p,
-                proposal: {
-                  ...p.proposal,
-                  validated_at: new Date().toISOString(),
-                },
-              }
+              ...p,
+              proposal: {
+                ...p.proposal,
+                validated_at: new Date().toISOString(),
+              },
+            }
             : p,
         ),
       );
@@ -275,12 +279,12 @@ export function IncidentCard({
         prev.map((p) =>
           p.proposal?.proposal_id === proposalId
             ? {
-                ...p,
-                proposal: {
-                  ...p.proposal,
-                  rejected_at: new Date().toISOString(),
-                },
-              }
+              ...p,
+              proposal: {
+                ...p.proposal,
+                rejected_at: new Date().toISOString(),
+              },
+            }
             : p,
         ),
       );
