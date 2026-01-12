@@ -6,16 +6,24 @@ export type ApiAssignmentProposalRead = {
   proposal_id: string;
   incident_id: string;
   generated_at: string;
-  proposals: {
+  vehicles_to_send: {
     incident_phase_id: string;
     vehicle_id: string;
     distance_km: number;
     estimated_time_min: number;
     energy_level: number;
     score: number;
-    rationale?: string | null;
+    rank: number;
+    route_geometry?: {
+      type: string;
+      coordinates: number[][];
+    };
   }[];
-  missing_by_vehicle_type: Record<string, number>;
+  missing: {
+    incident_phase_id: string;
+    vehicle_type_id: string;
+    missing_quantity: number;
+  }[];
   validated_at?: string | null;
   rejected_at?: string | null;
 };
@@ -148,13 +156,12 @@ export async function rejectAssignmentProposal(
 export async function requestAssignmentProposal(
   incidentId: string,
 ): Promise<void> {
-  const response = await fetchWithAuth("/api/assignment-proposals/new", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetchWithAuth(
+    `/api/incidents/${incidentId}/request-assignment`,
+    {
+      method: "POST",
     },
-    body: JSON.stringify({ incident_id: incidentId }),
-  });
+  );
 
   const parsedBody = await parseResponseBody(response);
 
@@ -166,6 +173,27 @@ export async function requestAssignmentProposal(
   }
 }
 
+export async function requestPhaseAssignmentProposal(
+  incidentId: string,
+  phaseId: string,
+): Promise<void> {
+  const response = await fetchWithAuth(
+    `/api/incidents/${incidentId}/${phaseId}/request-assignment`,
+    {
+      method: "POST",
+    },
+  );
+
+  const parsedBody = await parseResponseBody(response);
+
+  if (!response.ok) {
+    const errorMessage =
+      getErrorMessage(response, parsedBody) ||
+      `Failed to request assignment proposal for phase ${phaseId}`;
+    throw new Error(errorMessage);
+  }
+}
+
 export function mapAssignmentProposalToUi(
   proposal: ApiAssignmentProposalRead,
 ): AssignmentProposal {
@@ -173,8 +201,10 @@ export function mapAssignmentProposalToUi(
     proposal_id: proposal.proposal_id,
     incident_id: proposal.incident_id,
     generated_at: proposal.generated_at,
-    proposals: Array.isArray(proposal.proposals) ? proposal.proposals : [],
-    missing_by_vehicle_type: proposal.missing_by_vehicle_type ?? {},
+    vehicles_to_send: Array.isArray(proposal.vehicles_to_send)
+      ? proposal.vehicles_to_send
+      : [],
+    missing: Array.isArray(proposal.missing) ? proposal.missing : [],
     validated_at: proposal.validated_at ?? null,
     rejected_at: proposal.rejected_at ?? null,
   };

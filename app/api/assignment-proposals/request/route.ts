@@ -6,6 +6,6 @@ export const dynamic = "force-dynamic";
 export const POST = (request: NextRequest) =>
   proxyApiRequest(
     request,
-    "qg/assignment-proposals/new",
-    "assignment proposal",
+    "qg/assignment-proposals/request",
+    "assignment proposal request",
   );

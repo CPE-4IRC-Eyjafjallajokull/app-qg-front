@@ -35,6 +35,13 @@ type ComboboxProps = {
   emptyLabel?: string;
   disabled?: boolean;
   className?: string;
+  contentClassName?: string;
+  commandClassName?: string;
+  inputClassName?: string;
+  listClassName?: string;
+  groupClassName?: string;
+  itemClassName?: string;
+  emptyClassName?: string;
 };
 
 export function Combobox({
@@ -47,6 +54,13 @@ export function Combobox({
   emptyLabel = "Aucun resultat",
   disabled = false,
   className,
+  contentClassName,
+  commandClassName,
+  inputClassName,
+  listClassName,
+  groupClassName,
+  itemClassName,
+  emptyClassName,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const selectedOption = options.find((option) => option.value === value);
@@ -73,21 +87,28 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
+        className={cn(
+          "w-[--radix-popover-trigger-width] p-0",
+          contentClassName,
+        )}
         align="start"
         portalled={false}
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList className="max-h-60">
-            <CommandEmpty>{emptyLabel}</CommandEmpty>
-            <CommandGroup>
+        <Command className={commandClassName}>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            className={inputClassName}
+          />
+          <CommandList className={cn("max-h-60", listClassName)}>
+            <CommandEmpty className={emptyClassName}>{emptyLabel}</CommandEmpty>
+            <CommandGroup className={groupClassName}>
               {options.map((option) => {
                 const isSelected = option.value === value;
                 return (
                   <CommandItem
                     key={option.value}
                     value={`${option.label} ${option.value}`}
+                    className={itemClassName}
                     onSelect={() => {
                       onValueChange(option.value);
                       setOpen(false);
