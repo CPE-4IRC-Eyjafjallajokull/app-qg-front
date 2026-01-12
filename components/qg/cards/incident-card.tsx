@@ -1,7 +1,11 @@
 "use client";
 
-import type { Incident } from "@/types/qg";
-import { useState } from "react";
+import type {
+  AssignmentProposal,
+  AssignmentProposalItem,
+  Incident,
+} from "@/types/qg";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +24,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatErrorMessage } from "@/lib/error-message";
-import { requestAssignmentProposal } from "@/lib/assignment-proposals/service";
+import {
+  requestAssignmentProposal,
+  validateAssignmentProposal,
+  rejectAssignmentProposal,
+  fetchAssignmentProposals,
+} from "@/lib/assignment-proposals/service";
+import { useLiveEvents } from "@/components/live-events-provider";
+import { useResolver } from "@/components/resolver-provider";
+import { PhaseProposalCard } from "./phase-proposal-card";
 
 const severityConfig: Record<
   Incident["severity"],
@@ -91,6 +103,12 @@ const formatDate = (dateString: string) => {
   }
 };
 
+type PhaseProposalState = {
+  phaseId: string;
+  proposal: AssignmentProposal | null;
+  proposalItems: AssignmentProposalItem[];
+};
+
 export function IncidentCard({
   incident,
   onFocus,
@@ -99,9 +117,109 @@ export function IncidentCard({
   onFocus?: (incident: Incident) => void;
 }) {
   const [isRequesting, setIsRequesting] = useState(false);
+  const [phaseProposals, setPhaseProposals] = useState<PhaseProposalState[]>(
+    () =>
+      incident.phases.map((phaseId) => ({
+        phaseId,
+        proposal: null,
+        proposalItems: [],
+      })),
+  );
+
+  const { onEvent } = useLiveEvents();
+  const { resolve } = useResolver();
+
   const severity = severityConfig[incident.severity];
   const status = statusConfig[incident.status];
-  const isActionDisabled = isRequesting || incident.status === "resolved";
+  const isIncidentResolved = incident.status === "resolved";
+  const isActionDisabled = isRequesting || isIncidentResolved;
+
+  // Fetch existing proposals for this incident on mount
+  useEffect(() => {
+    const loadProposals = async () => {
+      try {
+        const proposals = await fetchAssignmentProposals();
+        const incidentProposals = proposals.filter(
+          (p) => p.incident_id === incident.id,
+        );
+
+        if (incidentProposals.length > 0) {
+          updatePhaseProposalsFromAssignments(incidentProposals);
+        }
+      } catch {
+        // Silently fail - proposals will load via SSE
+      }
+    };
+
+    loadProposals();
+  }, [incident.id]);
+
+  // Listen for new assignment proposals via SSE
+  useEffect(() => {
+    const unsubscribe = onEvent("vehicle_assignment_proposal", (event) => {
+      const data = event.data as {
+        proposal_id: string;
+        incident_id: string;
+        generated_at: string;
+        proposals: AssignmentProposalItem[];
+        missing_by_vehicle_type: Record<string, number>;
+      };
+
+      if (data.incident_id !== incident.id) {
+        return;
+      }
+
+      const newProposal: AssignmentProposal = {
+        proposal_id: data.proposal_id,
+        incident_id: data.incident_id,
+        generated_at: data.generated_at,
+        proposals: data.proposals,
+        missing_by_vehicle_type: data.missing_by_vehicle_type,
+        validated_at: null,
+        rejected_at: null,
+      };
+
+      updatePhaseProposalsFromAssignments([newProposal]);
+    });
+
+    return unsubscribe;
+  }, [incident.id, onEvent]);
+
+  const updatePhaseProposalsFromAssignments = useCallback(
+    (proposals: AssignmentProposal[]) => {
+      setPhaseProposals((prev) => {
+        const updated = [...prev];
+
+        for (const proposal of proposals) {
+          // Group proposal items by phase
+          const itemsByPhase = new Map<string, AssignmentProposalItem[]>();
+
+          for (const item of proposal.proposals) {
+            const existing = itemsByPhase.get(item.incident_phase_id) || [];
+            existing.push(item);
+            itemsByPhase.set(item.incident_phase_id, existing);
+          }
+
+          // Update each phase with its proposals
+          for (const [phaseId, items] of itemsByPhase) {
+            const phaseIndex = updated.findIndex((p) => p.phaseId === phaseId);
+            if (phaseIndex !== -1) {
+              // Sort items by score (highest first)
+              const sortedItems = [...items].sort((a, b) => b.score - a.score);
+              updated[phaseIndex] = {
+                ...updated[phaseIndex],
+                proposal,
+                proposalItems: sortedItems,
+              };
+            }
+          }
+        }
+
+        return updated;
+      });
+    },
+    [],
+  );
 
   const handleRequestAssignment = async () => {
     if (!incident.id) {
@@ -123,8 +241,82 @@ export function IncidentCard({
     }
   };
 
+  const handleValidateProposal = async (proposalId: string) => {
+    try {
+      await validateAssignmentProposal(proposalId);
+      toast.success("Proposition validee.");
+
+      // Update local state
+      setPhaseProposals((prev) =>
+        prev.map((p) =>
+          p.proposal?.proposal_id === proposalId
+            ? {
+                ...p,
+                proposal: {
+                  ...p.proposal,
+                  validated_at: new Date().toISOString(),
+                },
+              }
+            : p,
+        ),
+      );
+    } catch (error) {
+      toast.error(formatErrorMessage("Erreur lors de la validation.", error));
+    }
+  };
+
+  const handleRejectProposal = async (proposalId: string) => {
+    try {
+      await rejectAssignmentProposal(proposalId);
+      toast.success("Proposition refusee.");
+
+      // Update local state
+      setPhaseProposals((prev) =>
+        prev.map((p) =>
+          p.proposal?.proposal_id === proposalId
+            ? {
+                ...p,
+                proposal: {
+                  ...p.proposal,
+                  rejected_at: new Date().toISOString(),
+                },
+              }
+            : p,
+        ),
+      );
+    } catch (error) {
+      toast.error(formatErrorMessage("Erreur lors du refus.", error));
+    }
+  };
+
+  const handleRegenerateProposal = async (proposalId: string) => {
+    try {
+      // First reject the current proposal
+      await rejectAssignmentProposal(proposalId);
+
+      // Clear the proposal from local state
+      setPhaseProposals((prev) =>
+        prev.map((p) =>
+          p.proposal?.proposal_id === proposalId
+            ? { ...p, proposal: null, proposalItems: [] }
+            : p,
+        ),
+      );
+
+      // Request a new proposal
+      await requestAssignmentProposal(incident.id);
+      toast.success("Nouvelle proposition demandee.");
+    } catch (error) {
+      toast.error(formatErrorMessage("Erreur lors de la regeneration.", error));
+    }
+  };
+
+  const hasPendingProposals = phaseProposals.some(
+    (p) => p.proposal && !p.proposal.validated_at && !p.proposal.rejected_at,
+  );
+
   return (
-    <Collapsible defaultOpen={incident.status === "new"}>
+    <Collapsible defaultOpen={incident.status === "new" || hasPendingProposals}>
       <div
         className={cn(
           "overflow-hidden rounded-xl border bg-white/5 backdrop-blur-sm transition-all hover:bg-white/10",
@@ -168,6 +360,14 @@ export function IncidentCard({
               <span className="text-[10px] text-white/40">
                 {formatDate(incident.reportedAt)}
               </span>
+              {hasPendingProposals && (
+                <Badge
+                  variant="outline"
+                  className="h-4 border-blue-500/30 bg-blue-500/20 px-1.5 text-[9px] text-blue-400"
+                >
+                  Propositions
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -199,16 +399,21 @@ export function IncidentCard({
               </p>
             )}
 
-            {incident.phases.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {incident.phases.map((phase, idx) => (
-                  <Badge
-                    key={idx}
-                    variant="outline"
-                    className="border-white/10 bg-white/5 px-1.5 py-0 text-[10px] text-white/50"
-                  >
-                    {phase}
-                  </Badge>
+            {/* Phases with proposals */}
+            {phaseProposals.length > 0 && (
+              <div className="space-y-1.5">
+                {phaseProposals.map((phaseState) => (
+                  <PhaseProposalCard
+                    key={phaseState.phaseId}
+                    phaseId={phaseState.phaseId}
+                    proposal={phaseState.proposal}
+                    proposalItems={phaseState.proposalItems}
+                    resolve={resolve}
+                    onValidate={handleValidateProposal}
+                    onReject={handleRejectProposal}
+                    onRegenerate={handleRegenerateProposal}
+                    isIncidentResolved={isIncidentResolved}
+                  />
                 ))}
               </div>
             )}

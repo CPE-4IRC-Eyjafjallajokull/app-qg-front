@@ -106,3 +106,10 @@ export type OperatorCommand = {
   description: string;
   shortcut?: string;
 };
+
+// Type for incident phase with its assignment proposals
+export type IncidentPhaseWithProposals = {
+  phaseId: string;
+  proposal: AssignmentProposal | null;
+  proposalItems: AssignmentProposalItem[];
+};
