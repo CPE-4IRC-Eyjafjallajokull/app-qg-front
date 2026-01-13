@@ -1,17 +1,39 @@
 import type {
   AssignmentProposal,
   AssignmentProposalItem,
+  AssignmentProposalMissing,
   Incident,
   VehicleAssignment,
 } from "@/types/qg";
 
+/**
+ * Represents a single proposal's items for a specific phase.
+ * A proposal can span multiple phases, so we group items by proposal first.
+ */
+export type ProposalGroup = {
+  proposal: AssignmentProposal;
+  items: AssignmentProposalItem[];
+  missing: AssignmentProposalMissing[];
+};
+
+/**
+ * State for a phase, containing all proposals that affect this phase.
+ * Each proposal is kept separate to allow individual accept/reject actions.
+ */
 export type PhaseProposalState = {
   phaseId: string;
   phaseCode: string;
   phaseEndedAt?: string | null;
-  proposal: AssignmentProposal | null;
-  proposalItems: AssignmentProposalItem[];
+  /** All proposals affecting this phase, grouped by proposal_id */
+  proposalGroups: ProposalGroup[];
   vehicleAssignments: VehicleAssignment[];
+};
+
+/**
+ * Returns the first 8 characters of a proposal ID for display.
+ */
+export const getShortProposalId = (proposalId: string): string => {
+  return proposalId.slice(0, 8);
 };
 
 export const severityConfig: Record<
@@ -63,11 +85,11 @@ export const statusConfig: Record<
     className: "bg-red-500/20 text-red-400 border-red-500/30",
   },
   assigned: {
-    label: "Assigne",
+    label: "Assigné",
     className: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   },
   resolved: {
-    label: "Resolu",
+    label: "Résolu",
     className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   },
 };
@@ -90,6 +112,7 @@ export const buildPhaseProposalState = (
   phases: Incident["phases"],
   proposals: AssignmentProposal[],
 ): PhaseProposalState[] => {
+  // Sort phases by startedAt date
   const sortedPhases = [...phases]
     .map((phase, index) => ({
       phase,
@@ -105,37 +128,86 @@ export const buildPhaseProposalState = (
     )
     .map(({ phase }) => phase);
 
-  const proposalsByPhase = new Map<
+  // Build a map: phaseId -> proposalId -> { items, missing }
+  // This ensures each proposal is kept separate within each phase
+  const phaseProposalMap = new Map<
     string,
-    { proposal: AssignmentProposal; items: AssignmentProposalItem[] }
+    Map<
+      string,
+      { items: AssignmentProposalItem[]; missing: AssignmentProposalMissing[] }
+    >
   >();
 
+  // Index proposals by their ID for quick lookup
+  const proposalById = new Map<string, AssignmentProposal>();
   for (const proposal of proposals) {
+    proposalById.set(proposal.proposal_id, proposal);
+  }
+
+  for (const proposal of proposals) {
+    // Group vehicles_to_send by phase, keeping track of proposal
     for (const item of proposal.vehicles_to_send) {
-      const existing = proposalsByPhase.get(item.incident_phase_id);
-      if (existing) {
-        existing.items.push(item);
-      } else {
-        proposalsByPhase.set(item.incident_phase_id, {
-          proposal,
-          items: [item],
-        });
+      const phaseId = item.incident_phase_id;
+      if (!phaseProposalMap.has(phaseId)) {
+        phaseProposalMap.set(phaseId, new Map());
       }
+      const proposalsForPhase = phaseProposalMap.get(phaseId)!;
+      if (!proposalsForPhase.has(proposal.proposal_id)) {
+        proposalsForPhase.set(proposal.proposal_id, { items: [], missing: [] });
+      }
+      proposalsForPhase.get(proposal.proposal_id)!.items.push(item);
+    }
+
+    // Group missing by phase, keeping track of proposal
+    for (const missingItem of proposal.missing) {
+      const phaseId = missingItem.incident_phase_id;
+      if (!phaseProposalMap.has(phaseId)) {
+        phaseProposalMap.set(phaseId, new Map());
+      }
+      const proposalsForPhase = phaseProposalMap.get(phaseId)!;
+      if (!proposalsForPhase.has(proposal.proposal_id)) {
+        proposalsForPhase.set(proposal.proposal_id, { items: [], missing: [] });
+      }
+      proposalsForPhase.get(proposal.proposal_id)!.missing.push(missingItem);
     }
   }
 
   return sortedPhases.map((phase) => {
-    const proposalData = proposalsByPhase.get(phase.id);
-    const sortedItems = proposalData
-      ? [...proposalData.items].sort((a, b) => b.score - a.score)
-      : [];
+    const proposalsForPhase = phaseProposalMap.get(phase.id);
+    const proposalGroups: ProposalGroup[] = [];
+
+    if (proposalsForPhase) {
+      for (const [proposalId, data] of proposalsForPhase) {
+        const proposal = proposalById.get(proposalId);
+        if (proposal) {
+          // Sort items by score descending
+          const sortedItems = [...data.items].sort((a, b) => b.score - a.score);
+          proposalGroups.push({
+            proposal,
+            items: sortedItems,
+            missing: data.missing,
+          });
+        }
+      }
+      // Sort proposal groups: pending first, then by generated_at descending
+      proposalGroups.sort((a, b) => {
+        const aIsPending = !a.proposal.validated_at && !a.proposal.rejected_at;
+        const bIsPending = !b.proposal.validated_at && !b.proposal.rejected_at;
+        if (aIsPending !== bIsPending) {
+          return aIsPending ? -1 : 1;
+        }
+        return (
+          new Date(b.proposal.generated_at).getTime() -
+          new Date(a.proposal.generated_at).getTime()
+        );
+      });
+    }
 
     return {
       phaseId: phase.id,
       phaseCode: phase.code,
       phaseEndedAt: phase.endedAt ?? null,
-      proposal: proposalData?.proposal ?? null,
-      proposalItems: sortedItems,
+      proposalGroups,
       vehicleAssignments: phase.vehicleAssignments ?? [],
     };
   });

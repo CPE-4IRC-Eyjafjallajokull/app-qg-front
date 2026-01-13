@@ -1,4 +1,11 @@
-import { Clock, Users, Warehouse, Navigation, Radio } from "lucide-react";
+import {
+  Clock,
+  Users,
+  Warehouse,
+  Navigation,
+  Radio,
+  Timer,
+} from "lucide-react";
 import type { Vehicle } from "@/types/qg";
 import { cn } from "@/lib/utils";
 import { getVehicleImagePath } from "@/lib/vehicles/images";
@@ -111,9 +118,27 @@ const formatVehicleTime = (dateString: string) => {
 type VehicleCardProps = {
   vehicle: Vehicle;
   className?: string;
+  estimatedArrivalSeconds?: number | null;
 };
 
-export function VehicleCard({ vehicle, className }: VehicleCardProps) {
+const formatDuration = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+
+  if (minutes === 0) {
+    return `${remainingSeconds}s`;
+  }
+  if (remainingSeconds === 0) {
+    return `${minutes} min`;
+  }
+  return `${minutes} min ${remainingSeconds}s`;
+};
+
+export function VehicleCard({
+  vehicle,
+  className,
+  estimatedArrivalSeconds,
+}: VehicleCardProps) {
   const config = vehicleStatusConfig[vehicle.status];
 
   return (
@@ -169,6 +194,21 @@ export function VehicleCard({ vehicle, className }: VehicleCardProps) {
             {config.label}
           </Badge>
         </div>
+
+        {/* ETA - Temps d'arrivée estimé */}
+        {estimatedArrivalSeconds != null && estimatedArrivalSeconds > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2">
+            <Timer className="h-4 w-4 shrink-0 text-blue-400" />
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase tracking-wider text-blue-300/70">
+                Arrivée estimée
+              </span>
+              <span className="text-sm font-medium text-blue-300">
+                {formatDuration(estimatedArrivalSeconds)}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Metadonnees */}
         <div className="space-y-2 border-t border-white/10 pt-3 text-[11px] text-white/50">

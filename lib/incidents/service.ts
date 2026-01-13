@@ -71,6 +71,7 @@ export type ApiIncidentVehicleAssignmentRead = {
   assigned_by_operator_id?: string | null;
   validated_at?: string | null;
   validated_by_operator_id?: string | null;
+  arrived_at?: string | null;
   unassigned_at?: string | null;
 };
 

@@ -7,9 +7,14 @@ import { VehicleCard } from "@/components/qg/map/vehicle-card";
 type VehiclePopupProps = {
   vehicle: Vehicle;
   onClose: () => void;
+  estimatedArrivalSeconds?: number | null;
 };
 
-export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
+export function VehiclePopup({
+  vehicle,
+  onClose,
+  estimatedArrivalSeconds,
+}: VehiclePopupProps) {
   return (
     <Popup
       latitude={vehicle.location.lat}
@@ -47,7 +52,10 @@ export function VehiclePopup({ vehicle, onClose }: VehiclePopupProps) {
           </div>
 
           {/* Carte véhicule */}
-          <VehicleCard vehicle={vehicle} />
+          <VehicleCard
+            vehicle={vehicle}
+            estimatedArrivalSeconds={estimatedArrivalSeconds}
+          />
         </div>
       </div>
     </Popup>

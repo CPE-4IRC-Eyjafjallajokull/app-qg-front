@@ -68,8 +68,10 @@ export function IncidentCard({
     [incident.phases, proposals],
   );
 
-  const hasPendingProposals = phaseProposals.some(
-    (p) => p.proposal && !p.proposal.validated_at && !p.proposal.rejected_at,
+  const hasPendingProposals = phaseProposals.some((p) =>
+    p.proposalGroups.some(
+      (g) => !g.proposal.validated_at && !g.proposal.rejected_at,
+    ),
   );
 
   const handleRequestAssignment = async () => {
@@ -251,8 +253,7 @@ export function IncidentCard({
                     key={phaseState.phaseId}
                     phaseId={phaseState.phaseId}
                     incidentId={incident.id}
-                    proposal={phaseState.proposal}
-                    proposalItems={phaseState.proposalItems}
+                    proposalGroups={phaseState.proposalGroups}
                     vehicleAssignments={phaseState.vehicleAssignments}
                     phaseEndedAt={phaseState.phaseEndedAt}
                     resolve={resolve}

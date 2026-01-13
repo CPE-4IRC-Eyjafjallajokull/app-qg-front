@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type {
-  AssignmentProposal,
-  AssignmentProposalItem,
-  Incident,
-  VehicleAssignment,
-} from "@/types/qg";
+import type { AssignmentProposal, Incident } from "@/types/qg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +27,10 @@ import {
 import { useResolver } from "@/components/resolver-provider";
 import { PhaseProposalCard } from "@/components/qg/cards/phase-proposal-card";
 import { IncidentPhaseDialog } from "@/components/qg/cards/incident-phase-dialog";
+import {
+  buildPhaseProposalState,
+  type PhaseProposalState,
+} from "@/components/qg/cards/incident-card-utils";
 
 const severityConfig: Record<
   Incident["severity"],
@@ -100,15 +99,6 @@ const formatDate = (dateString: string) => {
   }
 };
 
-type PhaseProposalState = {
-  phaseId: string;
-  phaseCode: string;
-  phaseEndedAt?: string | null;
-  proposal: AssignmentProposal | null;
-  proposalItems: AssignmentProposalItem[];
-  vehicleAssignments: VehicleAssignment[];
-};
-
 type IncidentMarkerPopoverContentProps = {
   incident: Incident;
   proposals: AssignmentProposal[];
@@ -132,57 +122,10 @@ export function IncidentMarkerPopoverContent({
   const isIncidentResolved = incident.status === "resolved";
   const isActionDisabled = isRequesting || isIncidentResolved;
 
-  const phaseProposals = useMemo<PhaseProposalState[]>(() => {
-    const sortedPhases = [...incident.phases]
-      .map((phase, index) => ({
-        phase,
-        index,
-        startedAt: phase.startedAt
-          ? Date.parse(phase.startedAt)
-          : Number.POSITIVE_INFINITY,
-      }))
-      .sort((a, b) =>
-        a.startedAt === b.startedAt
-          ? a.index - b.index
-          : a.startedAt - b.startedAt,
-      )
-      .map(({ phase }) => phase);
-
-    const proposalsByPhase = new Map<
-      string,
-      { proposal: AssignmentProposal; items: AssignmentProposalItem[] }
-    >();
-
-    for (const proposal of proposals) {
-      for (const item of proposal.vehicles_to_send) {
-        const existing = proposalsByPhase.get(item.incident_phase_id);
-        if (existing) {
-          existing.items.push(item);
-        } else {
-          proposalsByPhase.set(item.incident_phase_id, {
-            proposal,
-            items: [item],
-          });
-        }
-      }
-    }
-
-    return sortedPhases.map((phase) => {
-      const proposalData = proposalsByPhase.get(phase.id);
-      const sortedItems = proposalData
-        ? [...proposalData.items].sort((a, b) => b.score - a.score)
-        : [];
-
-      return {
-        phaseId: phase.id,
-        phaseCode: phase.code,
-        phaseEndedAt: phase.endedAt ?? null,
-        proposal: proposalData?.proposal ?? null,
-        proposalItems: sortedItems,
-        vehicleAssignments: phase.vehicleAssignments ?? [],
-      };
-    });
-  }, [incident.phases, proposals]);
+  const phaseProposals = useMemo<PhaseProposalState[]>(
+    () => buildPhaseProposalState(incident.phases, proposals),
+    [incident.phases, proposals],
+  );
 
   const handleRequestAssignment = async () => {
     if (!incident.id) {
@@ -309,8 +252,7 @@ export function IncidentMarkerPopoverContent({
                 key={phaseState.phaseId}
                 phaseId={phaseState.phaseId}
                 incidentId={incident.id}
-                proposal={phaseState.proposal}
-                proposalItems={phaseState.proposalItems}
+                proposalGroups={phaseState.proposalGroups}
                 vehicleAssignments={phaseState.vehicleAssignments}
                 phaseEndedAt={phaseState.phaseEndedAt}
                 resolve={resolve}

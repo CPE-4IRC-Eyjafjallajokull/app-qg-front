@@ -248,6 +248,47 @@ export function MetricsScreen() {
       p90AssignmentTime: percentile(responseTimes.assigned, 0.9),
       avgValidationTime: average(responseTimes.validated),
       p90ValidationTime: percentile(responseTimes.validated, 0.9),
+
+      // Average incident duration (for resolved incidents)
+      avgIncidentDuration: (() => {
+        const durations: number[] = [];
+        for (const incident of incidentsInRange) {
+          const createdAt = toDateMs(incident.created_at);
+          const endedAt = toDateMs(incident.ended_at);
+          if (createdAt && endedAt) {
+            const delta = minutesBetween(createdAt, endedAt);
+            if (delta !== null) {
+              durations.push(delta);
+            }
+          }
+        }
+        return average(durations);
+      })(),
+
+      // Average time before arrival on scene
+      avgArrivalTime: (() => {
+        const arrivalTimes: number[] = [];
+        for (const incident of incidentsInRange) {
+          const createdAt = toDateMs(incident.created_at);
+          if (!createdAt) continue;
+
+          const allAssignments = incident.phases.flatMap(
+            (phase) => phase.vehicle_assignments ?? [],
+          );
+          const firstArrivedAt = findEarliest(
+            allAssignments.map((a) => a.arrived_at ?? null),
+          );
+
+          if (firstArrivedAt) {
+            const delta = minutesBetween(createdAt, firstArrivedAt);
+            if (delta !== null) {
+              arrivalTimes.push(delta);
+            }
+          }
+        }
+        return average(arrivalTimes);
+      })(),
+
       responseSeries,
 
       // Severity distribution
@@ -634,7 +675,7 @@ export function MetricsScreen() {
               </ChartContainer>
             </ChartCard>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <MiniStatCard
                 icon={<CheckCircle2 className="h-4 w-4" />}
                 label="Taux d'acceptation"
@@ -699,6 +740,34 @@ export function MetricsScreen() {
                         2
                       ? "warning"
                       : "success"
+                }
+                isLoading={isLoading}
+              />
+              <MiniStatCard
+                icon={<Clock className="h-4 w-4" />}
+                label="Duree moy. incident"
+                value={formatMinutes(metrics.avgIncidentDuration)}
+                subValue="incidents resolus"
+                variant={
+                  metrics.avgIncidentDuration > 120
+                    ? "warning"
+                    : metrics.avgIncidentDuration > 0
+                      ? "success"
+                      : "default"
+                }
+                isLoading={isLoading}
+              />
+              <MiniStatCard
+                icon={<Truck className="h-4 w-4" />}
+                label="Delai arrivee"
+                value={formatMinutes(metrics.avgArrivalTime)}
+                subValue="avant arrivee sur lieux"
+                variant={
+                  metrics.avgArrivalTime > 30
+                    ? "warning"
+                    : metrics.avgArrivalTime > 0
+                      ? "success"
+                      : "default"
                 }
                 isLoading={isLoading}
               />

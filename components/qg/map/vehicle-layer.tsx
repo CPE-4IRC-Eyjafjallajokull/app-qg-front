@@ -76,6 +76,7 @@ export function VehicleLayer({ vehicles, incidents }: VehicleLayerProps) {
   const [routeGeometry, setRouteGeometry] = useState<RouteGeometry | null>(
     null,
   );
+  const [routeDuration, setRouteDuration] = useState<number | null>(null);
   const interpolatedVehicles = useInterpolatedVehicles(vehicles);
 
   const vehiclesById = useMemo(
@@ -126,6 +127,7 @@ export function VehicleLayer({ vehicles, incidents }: VehicleLayerProps) {
         const data: RouteResponse = await response.json();
         if (data.geometry?.coordinates?.length >= 2) {
           setRouteGeometry(data.geometry);
+          setRouteDuration(data.duration_s);
         }
       } catch (error) {
         console.error("Error fetching route:", error);
@@ -217,6 +219,7 @@ export function VehicleLayer({ vehicles, incidents }: VehicleLayerProps) {
         typeof id === "string" && id.length > 0 ? id : null;
       setSelectedId(nextSelectedId);
       setRouteGeometry(null);
+      setRouteDuration(null);
       if (nextSelectedId) {
         const vehicle = vehiclesById.get(nextSelectedId);
         if (vehicle) {
@@ -239,6 +242,7 @@ export function VehicleLayer({ vehicles, incidents }: VehicleLayerProps) {
   const handleClose = useCallback(() => {
     setSelectedId(null);
     setRouteGeometry(null);
+    setRouteDuration(null);
   }, []);
 
   const visibleRouteGeometry =
@@ -271,7 +275,13 @@ export function VehicleLayer({ vehicles, incidents }: VehicleLayerProps) {
       </Source>
       <RouteLayer geometry={visibleRouteGeometry} beforeId={VEHICLE_LAYER_ID} />
       {selectedVehicle && (
-        <VehiclePopup vehicle={selectedVehicle} onClose={handleClose} />
+        <VehiclePopup
+          vehicle={selectedVehicle}
+          onClose={handleClose}
+          estimatedArrivalSeconds={
+            selectedVehicle.status === "engaged" ? routeDuration : null
+          }
+        />
       )}
     </>
   );

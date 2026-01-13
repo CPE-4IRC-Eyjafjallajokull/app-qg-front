@@ -528,6 +528,55 @@ export function HomeScreen() {
     [],
   );
 
+  const handleAssignmentProposalAccepted = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+
+      const data = payload as {
+        proposal_id?: string;
+        incident_id?: string;
+        validated_at?: string;
+        assignments_created?: number;
+      };
+
+      if (!data.proposal_id || !data.validated_at) {
+        return;
+      }
+
+      updateProposalStatus(data.proposal_id, {
+        validated_at: data.validated_at,
+      });
+    },
+    [updateProposalStatus],
+  );
+
+  const handleAssignmentProposalRefused = useCallback(
+    (event: SSEEvent) => {
+      const payload = event.data;
+      if (!payload || typeof payload !== "object") {
+        return;
+      }
+
+      const data = payload as {
+        proposal_id?: string;
+        incident_id?: string;
+        rejected_at?: string;
+      };
+
+      if (!data.proposal_id || !data.rejected_at) {
+        return;
+      }
+
+      updateProposalStatus(data.proposal_id, {
+        rejected_at: data.rejected_at,
+      });
+    },
+    [updateProposalStatus],
+  );
+
   useLiveEvent("new_incident", handleNewIncident);
   useLiveEvent("vehicle_position_update", handleVehiclePositionUpdate);
   useLiveEvent("vehicle_status_update", handleVehicleStatusUpdate);
@@ -535,6 +584,11 @@ export function HomeScreen() {
   useLiveEvent("vehicle_assignment", handleVehicleAssignment);
   useLiveEvent("incident_phase_update", handleIncidentPhaseUpdate);
   useLiveEvent("assignment_proposal", handleAssignmentProposal);
+  useLiveEvent(
+    "assignement_proposal_accepted",
+    handleAssignmentProposalAccepted,
+  );
+  useLiveEvent("assignment_proposal_refused", handleAssignmentProposalRefused);
 
   useEffect(() => {
     return () => {
